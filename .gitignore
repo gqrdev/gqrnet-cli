@@ -1,0 +1,65 @@
+# -------------------------
+# Go build artifacts
+# -------------------------
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go module/workspace files
+go.work
+go.work.sum
+
+# Go cache directories
+pkg/
+go/pkg/
+
+# -------------------------
+# Temporary / swap files
+# -------------------------
+*~
+*.tmp
+*.cache
+*.log
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# -------------------------
+# macOS system files
+# -------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+*.icloud
+
+# -------------------------
+# VS Code
+# -------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# VS Code server inside DevContainers
+.vscode-server/

@@ -1,0 +1,51 @@
+# -------------------------
+# Go build artifacts
+# -------------------------
+bin/
+build/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Go module cache
+pkg/
+go/pkg/
+
+# Go workspace files
+go.work
+go.work.sum
+
+# -------------------------
+# Temporary / cache files
+# -------------------------
+*.log
+*.tmp
+*.cache
+
+# -------------------------
+# Editor / IDE
+# -------------------------
+.vscode/
+.vscode-server/
+.idea/
+*.swp
+
+# -------------------------
+# OS-specific
+# -------------------------
+.DS_Store
+Thumbs.db
+
+# -------------------------
+# DevContainer
+# -------------------------
+.vscode-server/
+
+# -------------------------
+# Git
+# -------------------------
+.git/
