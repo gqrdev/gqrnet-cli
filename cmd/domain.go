@@ -13,18 +13,14 @@ import (
 var (
 	jsonOutput bool
 	timeoutSec int
+	scanDomain = domain.ScanDomain
 )
 
 // domainCmd represents the "gqrnet domain <target>" subcommand.
 var domainCmd = &cobra.Command{
 	Use:   "domain [target-domain]",
 	Short: "Inspect DNS, HTTP, TLS, and Network status for a given domain.",
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("please specify a target domain (e.g. gqrnet domain example.com)")
-		}
-		return nil
-	},
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if timeoutSec <= 0 {
 			return errors.New("timeout must be greater than zero seconds")
@@ -34,14 +30,14 @@ var domainCmd = &cobra.Command{
 		timeout := time.Duration(timeoutSec) * time.Second
 
 		// Perform full scan
-		result := domain.ScanDomain(targetDomain, timeout)
+		result := scanDomain(targetDomain, timeout)
 
 		// Render output based on CLI flags
 		if jsonOutput {
-			return output.PrintJSON(result)
+			return output.PrintJSON(cmd.OutOrStdout(), result)
 		}
 
-		output.PrintText(result)
+		output.PrintText(cmd.OutOrStdout(), result)
 		return nil
 	},
 }
