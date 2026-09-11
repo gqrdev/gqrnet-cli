@@ -1,14 +1,14 @@
 AGENTS.md
 
 # Overview
-gqrnet is an open-source command-line interface (CLI) written in Go designed for infrastructure and networking inspection. The primary CLI command is netkit.  
+gqrnet is an open-source command-line interface (CLI) written in Go designed for infrastructure and networking inspection. The primary CLI command is gqrnet.  
 
 # Project Structure
 ```plaintext
 gqrnet/
 ├── cmd/
-│   ├── root.go       # Root command ("netkit"), global flags, subcommands registration
-│   └── domain.go     # "netkit domain <domain>" command orchestration
+│   ├── root.go       # Root command ("gqrnet"), global flags, subcommands registration
+│   └── domain.go     # "gqrnet domain <domain>" command orchestration
 ├── internal/
 │   ├── domain/       # Domain scanning coordinator and unified result structures
 │   ├── dns/          # DNS queries (A, AAAA, CNAME, MX, NS, TXT, SOA) via github.com/miekg/dns
@@ -36,4 +36,4 @@ gqrnet/
 ### Code Style
 - Follow standard Go idioms and gofmt formatting rules.
 - Handled return values must explicitly manage timeouts and network failure states without crashing the execution.
-- Error Handling: Always check and handle errors returned by functions, especially for network and I/O operations.
+- Error Handling: Always check and handle errors returned by functions, especially for network and I/O operations.	// Add "domain" command to the root command "gqrnet"

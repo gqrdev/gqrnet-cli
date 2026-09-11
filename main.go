@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "gqrnet/cmd"
 
 func main() {
-	fmt.Println("gqrnet CLI!")
+	cmd.Execute()
 }
