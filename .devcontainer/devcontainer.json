@@ -20,7 +20,10 @@
       ],
       "settings": {
         "go.toolsManagement.autoUpdate": true,
-        "go.useLanguageServer": true
+        "go.useLanguageServer": true,
+        "[go]": {
+          "editor.defaultFormatter": "golang.go"
+        }
       }
     }
   }
