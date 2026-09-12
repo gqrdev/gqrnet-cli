@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"gqrnet/internal/domain"
+	"github.com/gqrdev/gqrnet-cli/internal/domain"
 )
 
 func TestPrintJSONWritesValidResult(t *testing.T) {

@@ -1,4 +1,4 @@
-module gqrnet
+module github.com/gqrdev/gqrnet-cli
 
 go 1.27.1
 

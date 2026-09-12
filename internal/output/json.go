@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"gqrnet/internal/domain"
+	"github.com/gqrdev/gqrnet-cli/internal/domain"
 )
 
 // PrintJSON formats and outputs the domain check result in JSON format.
