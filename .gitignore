@@ -9,6 +9,8 @@
 *.test
 *.out
 
+/gqrnet
+
 # Go module/workspace files
 go.work
 go.work.sum
