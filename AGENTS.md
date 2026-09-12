@@ -7,6 +7,8 @@ gqrnet is an open-source command-line interface (CLI) written in Go designed for
 ```plaintext
 gqrnet/
 ├── cmd/
+│   ├── gqrnet/
+│   │   └── main.go     # Application entry point
 │   ├── root.go       # Root command ("gqrnet"), global flags, subcommands registration
 │   ├── domain.go     # "gqrnet domain <domain>" complete scan orchestration
 │   ├── dns.go        # "gqrnet dns <domain>" DNS-only command and input validation
@@ -19,7 +21,6 @@ gqrnet/
 │   ├── tls/          # TLS handshake inspection (versions, cipher suites, certs) via crypto/tls
 │   ├── network/      # IPv4 and IPv6 resolution using net library
 │   └── output/       # Terminal text rendering and JSON output formatters, including DNS-only output
-├── main.go           # Application entry point
 ├── go.mod            # Go module definitions
 └── go.sum            # Dependency checksums
 ```
