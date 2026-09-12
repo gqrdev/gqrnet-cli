@@ -2,6 +2,12 @@
 
 gqrnet inspects DNS, HTTP, TLS, and network information from the terminal.
 
+## Installation
+
+```bash
+go install github.com/gqrdev/gqrnet-cli/cmd/gqrnet@latest
+```
+
 ## Usage
 
 Complete domain scan:
