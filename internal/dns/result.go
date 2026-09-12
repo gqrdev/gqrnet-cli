@@ -21,16 +21,43 @@ type Result struct {
 	Error string   `json:"error,omitempty"`
 }
 
-// QueryDNS queries common record types (A, AAAA, MX, NS, TXT) using miekg/dns.
+// Options controls how DNS records are queried.
+type Options struct {
+	Server string
+	Types  []uint16
+}
+
+var defaultTypes = []uint16{
+	dns.TypeA,
+	dns.TypeAAAA,
+	dns.TypeMX,
+	dns.TypeNS,
+	dns.TypeSOA,
+	dns.TypeTXT,
+	dns.TypeCNAME,
+}
+
+// QueryDNS queries all supported record types using the system DNS configuration.
 func QueryDNS(ctx context.Context, domain string) Result {
+	return QueryDNSWithOptions(ctx, domain, Options{})
+}
+
+// QueryDNSWithOptions queries selected record types using an optional DNS server.
+func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Result {
 	var res Result
-	config, err := dns.ClientConfigFromFile("/etc/resolv.conf")
-	if err != nil || len(config.Servers) == 0 {
-		res.Error = "unable to read system DNS configuration"
-		return res
+	dnsServer := options.Server
+	if dnsServer == "" {
+		config, err := dns.ClientConfigFromFile("/etc/resolv.conf")
+		if err != nil || len(config.Servers) == 0 {
+			res.Error = "unable to read system DNS configuration"
+			return res
+		}
+		dnsServer = net.JoinHostPort(config.Servers[0], config.Port)
 	}
-	resolver := &dns.Client{}
-	dnsServer := net.JoinHostPort(config.Servers[0], config.Port)
+	queryTypes := options.Types
+	if len(queryTypes) == 0 {
+		queryTypes = defaultTypes
+	}
 
 	// Helper to send DNS requests safely
 	lookup := func(qtype uint16) ([]string, error) {
@@ -38,9 +65,17 @@ func QueryDNS(ctx context.Context, domain string) Result {
 		// Ensure fully qualified domain name ending with a dot
 		m.SetQuestion(dns.Fqdn(domain), qtype)
 
+		resolver := &dns.Client{}
 		in, _, err := resolver.ExchangeContext(ctx, m, dnsServer)
 		if err != nil || in == nil {
 			return nil, err
+		}
+		if in.Truncated {
+			resolver.Net = "tcp"
+			in, _, err = resolver.ExchangeContext(ctx, m, dnsServer)
+			if err != nil || in == nil {
+				return nil, err
+			}
 		}
 
 		var records []string
@@ -65,25 +100,28 @@ func QueryDNS(ctx context.Context, domain string) Result {
 		return records, nil
 	}
 
-	queries := []struct {
-		qtype  uint16
-		target *[]string
-	}{
-		{dns.TypeA, &res.A},
-		{dns.TypeAAAA, &res.AAAA},
-		{dns.TypeMX, &res.MX},
-		{dns.TypeNS, &res.NS},
-		{dns.TypeSOA, &res.SOA},
-		{dns.TypeTXT, &res.TXT},
-		{dns.TypeCNAME, &res.CNAME},
-	}
-	for _, query := range queries {
-		records, err := lookup(query.qtype)
+	for _, qtype := range queryTypes {
+		records, err := lookup(qtype)
 		if err != nil {
 			res.Error = err.Error()
 			return res
 		}
-		*query.target = records
+		switch qtype {
+		case dns.TypeA:
+			res.A = records
+		case dns.TypeAAAA:
+			res.AAAA = records
+		case dns.TypeMX:
+			res.MX = records
+		case dns.TypeNS:
+			res.NS = records
+		case dns.TypeSOA:
+			res.SOA = records
+		case dns.TypeTXT:
+			res.TXT = records
+		case dns.TypeCNAME:
+			res.CNAME = records
+		}
 	}
 
 	return res
