@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	dnsquery "gqrnet/internal/dns"
+	dnsquery "github.com/gqrdev/gqrnet-cli/internal/dns"
 )
 
 func TestNormalizeDNSDomain(t *testing.T) {

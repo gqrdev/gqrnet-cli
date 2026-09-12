@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"gqrnet/internal/domain"
+	"github.com/gqrdev/gqrnet-cli/internal/domain"
 )
 
 func TestDomainCommandRequiresExactlyOneTarget(t *testing.T) {
