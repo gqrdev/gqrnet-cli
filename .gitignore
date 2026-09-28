@@ -65,3 +65,5 @@ Temporary Items
 
 # VS Code server inside DevContainers
 .vscode-server/
+/post-merge.sh
+/.agents/

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	dnsquery "github.com/gqrdev/gqrnet-cli/internal/dns"
 	"github.com/gqrdev/gqrnet-cli/internal/domain"
 )
 
@@ -28,12 +29,16 @@ func TestPrintJSONWritesValidResult(t *testing.T) {
 
 func TestPrintTextWritesAllSections(t *testing.T) {
 	var output bytes.Buffer
-	PrintText(&output, domain.DomainResult{Domain: "example.com"})
+	PrintText(&output, domain.DomainResult{
+		Domain: "example.com",
+		DNS:    dnsquery.Result{CNAME: []string{"www.example.com"}},
+	})
 
 	for _, section := range []string{
 		"=== Target Domain: example.com ===",
 		"[ Network Resolution ]",
 		"[ DNS Records ]",
+		"CNAME: www.example.com",
 		"[ HTTP Status ]",
 		"[ TLS Certificate ]",
 	} {
