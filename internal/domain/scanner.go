@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"gqrnet/internal/dns"
-	"gqrnet/internal/http"
-	"gqrnet/internal/network"
-	"gqrnet/internal/tls"
+	"github.com/gqrdev/gqrnet-cli/internal/dns"
+	"github.com/gqrdev/gqrnet-cli/internal/http"
+	"github.com/gqrdev/gqrnet-cli/internal/network"
+	"github.com/gqrdev/gqrnet-cli/internal/tls"
 )
 
 // ScanDomain orchestrates parallel calls to DNS, HTTP, TLS, and Network checks.

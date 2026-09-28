@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	dnsquery "gqrnet/internal/dns"
+	dnsquery "github.com/gqrdev/gqrnet-cli/internal/dns"
 )
 
 // PrintDNSJSON writes a DNS result using the stable dns.Result JSON contract.

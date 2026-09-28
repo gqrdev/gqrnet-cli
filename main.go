@@ -1,6 +1,6 @@
 package main
 
-import "gqrnet/cmd"
+import "github.com/gqrdev/gqrnet-cli/cmd"
 
 func main() {
 	cmd.Execute()

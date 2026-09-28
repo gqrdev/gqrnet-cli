@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	dnsquery "gqrnet/internal/dns"
-	"gqrnet/internal/output"
+	dnsquery "github.com/gqrdev/gqrnet-cli/internal/dns"
+	"github.com/gqrdev/gqrnet-cli/internal/output"
 
 	"github.com/miekg/dns"
 	"github.com/spf13/cobra"

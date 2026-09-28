@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	dnsquery "gqrnet/internal/dns"
-	"gqrnet/internal/domain"
+	dnsquery "github.com/gqrdev/gqrnet-cli/internal/dns"
+	"github.com/gqrdev/gqrnet-cli/internal/domain"
 )
 
 func TestPrintJSONWritesValidResult(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"gqrnet/internal/domain"
-	"gqrnet/internal/output"
+	"github.com/gqrdev/gqrnet-cli/internal/domain"
+	"github.com/gqrdev/gqrnet-cli/internal/output"
 
 	"github.com/spf13/cobra"
 )

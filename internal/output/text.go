@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"gqrnet/internal/domain"
+	"github.com/gqrdev/gqrnet-cli/internal/domain"
 )
 
 // PrintText presents human-readable formatted output to the terminal.
