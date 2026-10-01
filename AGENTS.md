@@ -10,14 +10,15 @@ cmd/
 	root.go              Root Cobra command and execution
 	domain.go            Full-scan command and flags
 	dns.go               DNS-only command, flags, and input normalization
+	http.go              Passive HTTP security audit command
 	*_test.go            CLI tests
 internal/
 	domain/               Full-scan coordinator and result
 	dns/                  DNS queries and DNS result types
-	http/                 HTTP request inspection
+	http/                 HTTP request inspection and passive URL audit
 	tls/                  TLS handshake and certificate inspection
 	network/              IPv4/IPv6 resolution
-	output/               Text and JSON formatting
+	output/               Text and JSON formatting, including HTTP audit output
 ```
 
 ## Architecture
@@ -25,7 +26,7 @@ internal/
 - `cmd/root.go` defines and executes the root command. Each subcommand registers itself and its flags.
 - `cmd/` owns CLI concerns such as flags, argument parsing, and command-specific input normalization. Keep network inspection and scan coordination in `internal/`.
 - `internal/domain/scanner.go` coordinates network, DNS, HTTP, and TLS checks concurrently using a shared context.
-- `internal/dns/`, `internal/http/`, `internal/tls/`, and `internal/network/` implement the corresponding checks. `internal/output/` formats results and does not perform inspections.
+- `internal/dns/`, `internal/http/`, `internal/tls/`, and `internal/network/` implement the corresponding checks. The standalone `http` command performs one passive GET for an absolute URL and reports selected security-related response metadata; it does not follow redirects, read the response body, or run active vulnerability tests. `internal/output/` formats results and does not perform inspections.
 - DNS uses `github.com/miekg/dns`; HTTP, TLS, and IP resolution use Go standard-library packages.
 
 ## Command Behavior
@@ -35,6 +36,7 @@ internal/
 - DNS queries all supported types by default: A, AAAA, CNAME, MX, NS, SOA, and TXT. Repeat `--type` to select types; values are case-insensitive. Only these types are supported by the CLI.
 - `dns --server` selects an explicit DNS server. Port 53 is added if omitted. Without this flag, the DNS package reads `/etc/resolv.conf`; do not assume this implies identical resolver behavior on every platform.
 - DNS retries a truncated response over TCP. Its JSON output serializes `internal/dns.Result`; preserve that result's existing string-based fields unless a requested change explicitly updates the output contract and its tests.
+- `gqrnet http <url>` accepts one absolute HTTP or HTTPS URL. It reports security headers, cookie attributes without values, the initial redirect with query values redacted, and TLS details from the request connection. With no section flags it prints all sections; `--headers`, `--cookies`, `--redirects`, and `--tls` filter the detailed sections. `--json` and `--timeout` are supported.
 
 ## Change Guidelines
 
