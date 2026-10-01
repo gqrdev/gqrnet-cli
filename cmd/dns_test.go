@@ -9,7 +9,7 @@ import (
 	dnsquery "github.com/gqrdev/gqrnet-cli/internal/dns"
 )
 
-func TestNormalizeDNSDomain(t *testing.T) {
+func TestNormalizeDomainTarget(t *testing.T) {
 	for _, test := range []struct {
 		input string
 		want  string
@@ -17,18 +17,18 @@ func TestNormalizeDNSDomain(t *testing.T) {
 		{input: "example.com", want: "example.com"},
 		{input: "example.com.", want: "example.com"},
 	} {
-		got, err := normalizeDNSDomain(test.input)
+		got, err := normalizeDomainTarget(test.input)
 		if err != nil {
-			t.Fatalf("normalizeDNSDomain(%q): %v", test.input, err)
+			t.Fatalf("normalizeDomainTarget(%q): %v", test.input, err)
 		}
 		if got != test.want {
-			t.Errorf("normalizeDNSDomain(%q) = %q, want %q", test.input, got, test.want)
+			t.Errorf("normalizeDomainTarget(%q) = %q, want %q", test.input, got, test.want)
 		}
 	}
 
 	for _, input := range []string{"https://example.com", "example.com:443", "example..com", "127.0.0.1"} {
-		if _, err := normalizeDNSDomain(input); err == nil {
-			t.Errorf("normalizeDNSDomain(%q) succeeded, want error", input)
+		if _, err := normalizeDomainTarget(input); err == nil {
+			t.Errorf("normalizeDomainTarget(%q) succeeded, want error", input)
 		}
 	}
 }
