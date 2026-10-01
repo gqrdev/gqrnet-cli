@@ -31,13 +31,17 @@ func TestPrintTextWritesAllSections(t *testing.T) {
 	var output bytes.Buffer
 	PrintText(&output, domain.DomainResult{
 		Domain: "example.com",
-		DNS:    dnsquery.Result{CNAME: []string{"www.example.com"}},
+		DNS: dnsquery.Result{
+			CNAME: []string{"www.example.com"},
+			Error: "MX: DNS server returned SERVFAIL",
+		},
 	})
 
 	for _, section := range []string{
 		"=== Target Domain: example.com ===",
 		"[ Network Resolution ]",
 		"[ DNS Records ]",
+		"Error: MX: DNS server returned SERVFAIL",
 		"CNAME: www.example.com",
 		"[ HTTP Status ]",
 		"[ TLS Certificate ]",

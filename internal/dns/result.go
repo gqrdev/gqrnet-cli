@@ -58,6 +58,7 @@ func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Re
 	if len(queryTypes) == 0 {
 		queryTypes = defaultTypes
 	}
+	var queryErrors []string
 
 	// Helper to send DNS requests safely
 	lookup := func(qtype uint16) ([]string, error) {
@@ -67,15 +68,28 @@ func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Re
 
 		resolver := &dns.Client{}
 		in, _, err := resolver.ExchangeContext(ctx, m, dnsServer)
-		if err != nil || in == nil {
+		if err != nil {
 			return nil, err
+		}
+		if in == nil {
+			return nil, fmt.Errorf("DNS server returned an empty response")
 		}
 		if in.Truncated {
 			resolver.Net = "tcp"
 			in, _, err = resolver.ExchangeContext(ctx, m, dnsServer)
-			if err != nil || in == nil {
+			if err != nil {
 				return nil, err
 			}
+			if in == nil {
+				return nil, fmt.Errorf("DNS server returned an empty response")
+			}
+		}
+		if in.Rcode != dns.RcodeSuccess {
+			rcode, ok := dns.RcodeToString[in.Rcode]
+			if !ok {
+				rcode = fmt.Sprintf("RCODE%d", in.Rcode)
+			}
+			return nil, fmt.Errorf("DNS server returned %s", rcode)
 		}
 
 		var records []string
@@ -103,8 +117,15 @@ func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Re
 	for _, qtype := range queryTypes {
 		records, err := lookup(qtype)
 		if err != nil {
-			res.Error = err.Error()
-			return res
+			typeName := dns.TypeToString[qtype]
+			if typeName == "" {
+				typeName = fmt.Sprintf("TYPE%d", qtype)
+			}
+			queryErrors = append(queryErrors, fmt.Sprintf("%s: %v", typeName, err))
+			if ctx.Err() != nil {
+				break
+			}
+			continue
 		}
 		switch qtype {
 		case dns.TypeA:
@@ -124,5 +145,6 @@ func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Re
 		}
 	}
 
+	res.Error = strings.Join(queryErrors, "; ")
 	return res
 }

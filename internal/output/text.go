@@ -26,15 +26,14 @@ func PrintText(w io.Writer, res domain.DomainResult) {
 	fmt.Fprintln(w, "[ DNS Records ]")
 	if res.DNS.Error != "" {
 		fmt.Fprintf(w, " Error: %s\n", res.DNS.Error)
-	} else {
-		fmt.Fprintf(w, " A:     %s\n", strings.Join(res.DNS.A, ", "))
-		fmt.Fprintf(w, " AAAA:  %s\n", strings.Join(res.DNS.AAAA, ", "))
-		fmt.Fprintf(w, " CNAME: %s\n", strings.Join(res.DNS.CNAME, ", "))
-		fmt.Fprintf(w, " MX:    %s\n", strings.Join(res.DNS.MX, ", "))
-		fmt.Fprintf(w, " NS:    %s\n", strings.Join(res.DNS.NS, ", "))
-		fmt.Fprintf(w, " SOA:   %s\n", strings.Join(res.DNS.SOA, ", "))
-		fmt.Fprintf(w, " TXT:   %s\n", strings.Join(res.DNS.TXT, ", "))
 	}
+	fmt.Fprintf(w, " A:     %s\n", strings.Join(res.DNS.A, ", "))
+	fmt.Fprintf(w, " AAAA:  %s\n", strings.Join(res.DNS.AAAA, ", "))
+	fmt.Fprintf(w, " CNAME: %s\n", strings.Join(res.DNS.CNAME, ", "))
+	fmt.Fprintf(w, " MX:    %s\n", strings.Join(res.DNS.MX, ", "))
+	fmt.Fprintf(w, " NS:    %s\n", strings.Join(res.DNS.NS, ", "))
+	fmt.Fprintf(w, " SOA:   %s\n", strings.Join(res.DNS.SOA, ", "))
+	fmt.Fprintf(w, " TXT:   %s\n", strings.Join(res.DNS.TXT, ", "))
 	fmt.Fprintln(w)
 
 	// HTTP
