@@ -64,7 +64,7 @@ func TestDomainCommandUsesScannerAndJSONOutput(t *testing.T) {
 	domainCmd.SetOut(&output)
 	t.Cleanup(func() { domainCmd.SetOut(nil) })
 
-	if err := domainCmd.RunE(domainCmd, []string{"example.com"}); err != nil {
+	if err := domainCmd.RunE(domainCmd, []string{"example.com."}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if gotTarget != "example.com" {
@@ -75,6 +75,27 @@ func TestDomainCommandUsesScannerAndJSONOutput(t *testing.T) {
 	}
 	if !strings.Contains(output.String(), `"domain": "example.com"`) {
 		t.Fatalf("JSON output does not contain the target: %s", output.String())
+	}
+}
+
+func TestDomainCommandRejectsInvalidTargetBeforeScanning(t *testing.T) {
+	oldTimeout := timeoutSec
+	oldScanner := scanDomain
+	t.Cleanup(func() {
+		timeoutSec = oldTimeout
+		scanDomain = oldScanner
+	})
+
+	timeoutSec = 3
+	scanDomain = func(string, time.Duration) domain.DomainResult {
+		t.Fatal("scanner should not be called for an invalid target")
+		return domain.DomainResult{}
+	}
+
+	for _, target := range []string{"https://example.com", "example.com:443", "example..com", "127.0.0.1"} {
+		if err := domainCmd.RunE(domainCmd, []string{target}); err == nil {
+			t.Errorf("RunE(%q) succeeded, want validation error", target)
+		}
 	}
 }
 

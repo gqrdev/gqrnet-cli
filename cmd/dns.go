@@ -37,7 +37,7 @@ var dnsCmd = &cobra.Command{
 	Short: "Query DNS records for a domain.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		target, err := normalizeDNSDomain(args[0])
+		target, err := normalizeDomainTarget(args[0])
 		if err != nil {
 			return err
 		}
@@ -79,7 +79,7 @@ func init() {
 	RootCmd.AddCommand(dnsCmd)
 }
 
-func normalizeDNSDomain(value string) (string, error) {
+func normalizeDomainTarget(value string) (string, error) {
 	if value == "" || strings.TrimSpace(value) != value || strings.ContainsAny(value, ":/\\") {
 		return "", errors.New("target must be a hostname without scheme, path, or port")
 	}

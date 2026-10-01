@@ -22,11 +22,14 @@ var domainCmd = &cobra.Command{
 	Short: "Inspect DNS, HTTP, TLS, and Network status for a given domain.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		targetDomain, err := normalizeDomainTarget(args[0])
+		if err != nil {
+			return err
+		}
 		if timeoutSec <= 0 {
 			return errors.New("timeout must be greater than zero seconds")
 		}
 
-		targetDomain := args[0]
 		timeout := time.Duration(timeoutSec) * time.Second
 
 		// Perform full scan
