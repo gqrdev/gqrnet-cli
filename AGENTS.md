@@ -1,56 +1,57 @@
-AGENTS.md
+# gqrnet
 
-# Overview
-gqrnet is an open-source command-line interface (CLI) written in Go designed for infrastructure and networking inspection. The primary CLI command is gqrnet.  
+gqrnet is a Go CLI for inspecting domain DNS records, HTTP responses, TLS certificates, and resolved IP addresses.
 
-# Project Structure
-```plaintext
-gqrnet/
-├── cmd/
-│   ├── gqrnet/
-│   │   └── main.go     # Application entry point
-│   ├── root.go       # Root command ("gqrnet"), global flags, subcommands registration
-│   ├── domain.go     # "gqrnet domain <domain>" complete scan orchestration
-│   ├── dns.go        # "gqrnet dns <domain>" DNS-only command and input validation
-│   ├── domain_test.go
-│   └── dns_test.go
-├── internal/
-│   ├── domain/       # Domain scanning coordinator and unified result structures
-│   ├── dns/          # DNS queries, selected record types, server configuration, UDP/TCP fallback
-│   ├── http/         # HTTP/HTTPS requests, status, headers, redirects via net/http
-│   ├── tls/          # TLS handshake inspection (versions, cipher suites, certs) via crypto/tls
-│   ├── network/      # IPv4 and IPv6 resolution using net library
-│   └── output/       # Terminal text rendering and JSON output formatters, including DNS-only output
-├── go.mod            # Go module definitions
-└── go.sum            # Dependency checksums
+## Project Structure
+
+```text
+cmd/
+	gqrnet/main.go       CLI entry point
+	root.go              Root Cobra command and execution
+	domain.go            Full-scan command and flags
+	dns.go               DNS-only command, flags, and input normalization
+	*_test.go            CLI tests
+internal/
+	domain/               Full-scan coordinator and result
+	dns/                  DNS queries and DNS result types
+	http/                 HTTP request inspection
+	tls/                  TLS handshake and certificate inspection
+	network/              IPv4/IPv6 resolution
+	output/               Text and JSON formatting
 ```
-## Core Tech Stack
-- Language: Go
-- DNS Resolution: [github.com/miekg/dns](https://github.com/miekg/dns)
-- HTTP Client: Standard library net/http
-- TLS Inspector: Standard library crypto/tls
-- Network Resolution: Standard library net
 
-## Developer Conventions & Guidelines
-### Architecture Principles
-- Separation of Concerns: Keep core scanning logic in internal/ packages (dns, http, tls, network) and presentation logic inside internal/output/.
-- Concurrency & Timeouts: Coordinate concurrent tasks and execution timeouts for the full scan within internal/domain/scanner.go. The DNS-only command owns its global timeout in cmd/dns.go and passes it through context.Context.
-- CLI Layer: CLI flags and input handling belong in cmd/. Direct business logic must not be placed inside cmd/ files.
+## Architecture
 
-### Code Style
-- Follow standard Go idioms and gofmt formatting rules.
-- Handled return values must explicitly manage timeouts and network failure states without crashing the execution.
-- Error Handling: Always check and handle errors returned by functions, especially for network and I/O operations.	// Add "domain" command to the root command "gqrnet"
+- `cmd/root.go` defines and executes the root command. Each subcommand registers itself and its flags.
+- `cmd/` owns CLI concerns such as flags, argument parsing, and command-specific input normalization. Keep network inspection and scan coordination in `internal/`.
+- `internal/domain/scanner.go` coordinates network, DNS, HTTP, and TLS checks concurrently using a shared context.
+- `internal/dns/`, `internal/http/`, `internal/tls/`, and `internal/network/` implement the corresponding checks. `internal/output/` formats results and does not perform inspections.
+- DNS uses `github.com/miekg/dns`; HTTP, TLS, and IP resolution use Go standard-library packages.
 
-### DNS Command
-- `gqrnet domain <domain>` runs the complete DNS, HTTP, TLS, and network inspection.
-- `gqrnet dns <domain>` runs only DNS queries. It queries all supported types by default; repeat `--type` to select specific types.
-- DNS uses the system resolver by default. `--server` selects an explicit server, and port `53` is assumed when omitted.
-- DNS input accepts hostnames only. The JSON output preserves the existing `internal/dns.Result` string-based contract.
+## Command Behavior
 
-### Verification
+- `gqrnet domain <target-domain>` runs the full inspection. It accepts exactly one argument and requires a positive `--timeout` (default: 10 seconds). The command currently passes the target to the scanner without applying the DNS command's hostname normalization.
+- `gqrnet dns <target-domain>` runs DNS queries only. It accepts a hostname, strips one trailing dot, rejects IP literals and common hostname syntax errors, and requires a positive `--timeout` (default: 10 seconds). This is command-level syntax validation, not complete RFC or IDNA validation.
+- DNS queries all supported types by default: A, AAAA, CNAME, MX, NS, SOA, and TXT. Repeat `--type` to select types; values are case-insensitive. Only these types are supported by the CLI.
+- `dns --server` selects an explicit DNS server. Port 53 is added if omitted. Without this flag, the DNS package reads `/etc/resolv.conf`; do not assume this implies identical resolver behavior on every platform.
+- DNS retries a truncated response over TCP. Its JSON output serializes `internal/dns.Result`; preserve that result's existing string-based fields unless a requested change explicitly updates the output contract and its tests.
+
+## Change Guidelines
+
+- Follow existing Go conventions and run `gofmt` on changed Go files.
+- Keep changes focused. Reuse nearby patterns and helpers, preserve public APIs and output formats unless the task requires a change, and avoid unrelated refactors.
+- Pass contexts through I/O and network operations. The full scan shares a timeout context across checks; operations must honor the context, so do not describe it as a hard wall-clock guarantee. The HTTP checker also has its own 5-second client timeout.
+- Handle returned errors according to the function's contract. Inspection failures are generally stored in each result's `Error` field and do not necessarily make the CLI command fail. JSON output functions return serialization/write errors; current text output functions do not return write errors.
+- Add or update focused tests for changed behavior, especially CLI input/flags, DNS result formatting, and output contracts. Do not assume a behavior is covered without checking nearby tests.
+
+## Verification
+
+Run the focused tests for the changed package first, then the repository-wide checks as appropriate:
+
 ```bash
 go test ./...
 go test -race ./...
 go vet ./...
 ```
+
+These are recommended project checks; do not assume they are configured as CI gates without verifying the repository workflows.
