@@ -22,12 +22,16 @@ func TestPrintDNSJSONWritesResult(t *testing.T) {
 
 func TestPrintDNSTextWritesDNSSectionAndError(t *testing.T) {
 	var output bytes.Buffer
-	PrintDNSText(&output, "example.com", dnsquery.Result{Error: "lookup failed"})
+	PrintDNSText(&output, "example.com", dnsquery.Result{
+		A:     []string{"192.0.2.1"},
+		Error: "MX: DNS server returned SERVFAIL",
+	})
 
 	for _, expected := range []string{
 		"=== Target Domain: example.com ===",
 		"[ DNS Records ]",
-		"Error: lookup failed",
+		"Error: MX: DNS server returned SERVFAIL",
+		"A:     192.0.2.1",
 	} {
 		if !strings.Contains(output.String(), expected) {
 			t.Errorf("output does not contain %q: %s", expected, output.String())

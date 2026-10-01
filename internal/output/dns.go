@@ -25,7 +25,6 @@ func PrintDNSText(w io.Writer, domain string, result dnsquery.Result) {
 	fmt.Fprintln(w, "[ DNS Records ]")
 	if result.Error != "" {
 		fmt.Fprintf(w, " Error: %s\n", result.Error)
-		return
 	}
 	fmt.Fprintf(w, " A:     %s\n", strings.Join(result.A, ", "))
 	fmt.Fprintf(w, " AAAA:  %s\n", strings.Join(result.AAAA, ", "))
