@@ -1,6 +1,6 @@
 # gqrnet CLI
 
-gqrnet inspects DNS, HTTP, TLS, and network information from the terminal.
+gqrnet inspects DNS, HTTP and HTTPS responses, TLS certificates, and network information from the terminal.
 
 ## Installation
 

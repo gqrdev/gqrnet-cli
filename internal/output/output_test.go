@@ -8,11 +8,15 @@ import (
 
 	dnsquery "github.com/gqrdev/gqrnet-cli/internal/dns"
 	"github.com/gqrdev/gqrnet-cli/internal/domain"
+	httpresult "github.com/gqrdev/gqrnet-cli/internal/http"
 )
 
 func TestPrintJSONWritesValidResult(t *testing.T) {
 	var output bytes.Buffer
-	result := domain.DomainResult{Domain: "example.com"}
+	result := domain.DomainResult{
+		Domain: "example.com",
+		HTTPS:  httpresult.Result{StatusCode: 200},
+	}
 
 	if err := PrintJSON(&output, result); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -25,6 +29,9 @@ func TestPrintJSONWritesValidResult(t *testing.T) {
 	if decoded.Domain != result.Domain {
 		t.Fatalf("domain = %q, want %q", decoded.Domain, result.Domain)
 	}
+	if decoded.HTTPS.StatusCode != result.HTTPS.StatusCode {
+		t.Fatalf("HTTPS status code = %d, want %d", decoded.HTTPS.StatusCode, result.HTTPS.StatusCode)
+	}
 }
 
 func TestPrintTextWritesAllSections(t *testing.T) {
@@ -35,6 +42,10 @@ func TestPrintTextWritesAllSections(t *testing.T) {
 			CNAME: []string{"www.example.com"},
 			Error: "MX: DNS server returned SERVFAIL",
 		},
+		HTTPS: httpresult.Result{
+			StatusCode:  302,
+			RedirectURL: "https://www.example.com",
+		},
 	})
 
 	for _, section := range []string{
@@ -44,6 +55,9 @@ func TestPrintTextWritesAllSections(t *testing.T) {
 		"Error: MX: DNS server returned SERVFAIL",
 		"CNAME: www.example.com",
 		"[ HTTP Status ]",
+		"[ HTTPS Status ]",
+		"Status Code:    302",
+		"Redirects To:   https://www.example.com",
 		"[ TLS Certificate ]",
 	} {
 		if !strings.Contains(output.String(), section) {

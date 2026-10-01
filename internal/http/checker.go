@@ -3,22 +3,34 @@ package http
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"time"
 )
 
 // CheckHTTP performs an HTTP GET request to collect response parameters.
 func CheckHTTP(ctx context.Context, domain string) Result {
-	var res Result
-	url := "http://" + domain
+	return check(ctx, "http", domain, nil)
+}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+// CheckHTTPS performs an HTTPS GET request to collect response parameters.
+func CheckHTTPS(ctx context.Context, domain string) Result {
+	return check(ctx, "https", domain, nil)
+}
+
+func check(ctx context.Context, scheme, domain string, transport http.RoundTripper) Result {
+	var res Result
+	endpointURL := url.URL{Scheme: scheme, Host: domain}
+	endpoint := endpointURL.String()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		res.Error = err.Error()
 		return res
 	}
 
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Transport: transport,
+		Timeout:   5 * time.Second,
 		// Do not follow redirects automatically so we can capture redirect URLs
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse

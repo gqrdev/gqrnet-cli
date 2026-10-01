@@ -50,6 +50,20 @@ func PrintText(w io.Writer, res domain.DomainResult) {
 	}
 	fmt.Fprintln(w)
 
+	// HTTPS
+	fmt.Fprintln(w, "[ HTTPS Status ]")
+	if res.HTTPS.Error != "" {
+		fmt.Fprintf(w, " Error: %s\n", res.HTTPS.Error)
+	} else {
+		fmt.Fprintf(w, " Status Code:    %d\n", res.HTTPS.StatusCode)
+		fmt.Fprintf(w, " Protocol:       %s\n", res.HTTPS.Proto)
+		fmt.Fprintf(w, " Response Time:  %d ms\n", res.HTTPS.ResponseTime)
+		if res.HTTPS.RedirectURL != "" {
+			fmt.Fprintf(w, " Redirects To:   %s\n", res.HTTPS.RedirectURL)
+		}
+	}
+	fmt.Fprintln(w)
+
 	// TLS
 	fmt.Fprintln(w, "[ TLS Certificate ]")
 	if res.TLS.Error != "" {
