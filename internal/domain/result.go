@@ -17,5 +17,6 @@ type DomainResult struct {
 	Network   network.Result `json:"network"`
 	DNS       dns.Result     `json:"dns"`
 	HTTP      http.Result    `json:"http"`
+	HTTPS     http.Result    `json:"https"`
 	TLS       tls.Result     `json:"tls"`
 }

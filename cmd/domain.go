@@ -19,7 +19,7 @@ var (
 // domainCmd represents the "gqrnet domain <target>" subcommand.
 var domainCmd = &cobra.Command{
 	Use:   "domain [target-domain]",
-	Short: "Inspect DNS, HTTP, TLS, and Network status for a given domain.",
+	Short: "Inspect DNS, HTTP, HTTPS, TLS, and network status for a domain.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		targetDomain, err := normalizeDomainTarget(args[0])

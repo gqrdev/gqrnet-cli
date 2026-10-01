@@ -11,7 +11,7 @@ import (
 	"github.com/gqrdev/gqrnet-cli/internal/tls"
 )
 
-// ScanDomain orchestrates parallel calls to DNS, HTTP, TLS, and Network checks.
+// ScanDomain orchestrates parallel DNS, HTTP, HTTPS, TLS, and network checks.
 func ScanDomain(domain string, timeout time.Duration) DomainResult {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -21,7 +21,7 @@ func ScanDomain(domain string, timeout time.Duration) DomainResult {
 	var wg sync.WaitGroup
 
 	// Run concurrently for performance
-	wg.Add(4)
+	wg.Add(5)
 
 	go func() {
 		defer wg.Done()
@@ -36,6 +36,11 @@ func ScanDomain(domain string, timeout time.Duration) DomainResult {
 	go func() {
 		defer wg.Done()
 		result.HTTP = http.CheckHTTP(ctx, domain)
+	}()
+
+	go func() {
+		defer wg.Done()
+		result.HTTPS = http.CheckHTTPS(ctx, domain)
 	}()
 
 	go func() {
