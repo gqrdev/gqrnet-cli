@@ -67,3 +67,4 @@ Temporary Items
 .vscode-server/
 /post-merge.sh
 /.agents/
+/test.sh
