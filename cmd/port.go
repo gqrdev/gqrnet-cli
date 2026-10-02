@@ -13,6 +13,7 @@ import (
 
 var (
 	portJSONOutput bool
+	portOpenOnly   bool
 	portTimeoutSec = 120
 	portValues     []string
 	portScan       = portscan.Scan
@@ -48,15 +49,16 @@ var portCmd = &cobra.Command{
 		result := portScan(ctx, target, ports, timeout)
 
 		if portJSONOutput {
-			return output.PrintPortJSON(cmd.OutOrStdout(), result)
+			return output.PrintPortJSON(cmd.OutOrStdout(), result, portOpenOnly)
 		}
-		output.PrintPortText(cmd.OutOrStdout(), result)
+		output.PrintPortText(cmd.OutOrStdout(), result, portOpenOnly)
 		return nil
 	},
 }
 
 func init() {
 	portCmd.Flags().BoolVar(&portJSONOutput, "json", false, "Output results in JSON format")
+	portCmd.Flags().BoolVar(&portOpenOnly, "open-only", false, "Show only open ports; scan all selected ports as usual")
 	portCmd.Flags().IntVar(&portTimeoutSec, "timeout", 120, "Execution timeout in seconds")
 	portCmd.Flags().StringArrayVar(&portValues, "port", nil, "TCP port to check (repeatable; 1-65535, max 100 unique ports)")
 

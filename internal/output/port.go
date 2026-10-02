@@ -12,8 +12,8 @@ import (
 )
 
 // PrintPortJSON writes a port scan result as indented JSON.
-func PrintPortJSON(w io.Writer, result portscan.Result) error {
-	if result.FullScan {
+func PrintPortJSON(w io.Writer, result portscan.Result, openOnly bool) error {
+	if result.FullScan || openOnly {
 		result.Results = openResults(result.Results)
 	}
 	data, err := json.MarshalIndent(result, "", "  ")
@@ -25,7 +25,7 @@ func PrintPortJSON(w io.Writer, result portscan.Result) error {
 }
 
 // PrintPortText presents each TCP check and a summary in human-readable form.
-func PrintPortText(w io.Writer, result portscan.Result) {
+func PrintPortText(w io.Writer, result portscan.Result, openOnly bool) {
 	fmt.Fprintf(w, "=== TCP Port Scan: %s ===\n\n", result.Target)
 	fmt.Fprintf(w, "Protocol: %s\n", result.Protocol)
 	fmt.Fprintf(w, "Started:  %s\n", result.StartedAt.UTC().Format("2006-01-02T15:04:05.000Z"))
@@ -49,19 +49,21 @@ func PrintPortText(w io.Writer, result portscan.Result) {
 		fmt.Fprintf(w, " %s (%s)\n", address.IP, address.Family)
 	}
 
-	if result.FullScan {
+	if result.FullScan || openOnly {
 		fmt.Fprintln(w, "\n[ Open TCP Ports ]")
 	} else {
 		fmt.Fprintln(w, "\n[ Port Checks ]")
 	}
 	checks := result.Results
-	if result.FullScan {
+	if result.FullScan || openOnly {
 		checks = openResults(checks)
 		if len(checks) == 0 {
-			if result.Complete {
+			if result.FullScan && result.Complete {
 				fmt.Fprintln(w, " No open TCP ports found")
-			} else {
+			} else if !result.Complete {
 				fmt.Fprintln(w, " No open TCP ports confirmed before the scan ended")
+			} else {
+				fmt.Fprintln(w, " No open ports found among requested ports")
 			}
 		}
 	}

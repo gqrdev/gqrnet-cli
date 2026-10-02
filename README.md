@@ -21,7 +21,7 @@ Add `--json` to any command for JSON output. Each command accepts `--timeout`; t
 
 See the [command usage guide](docs/commands.md) for flags, defaults, input requirements, and behavior details.
 
-Without `--port`, the `port` command checks TCP ports 1-65535 and displays open ports per resolved IP. Repeat `--port` to check selected ports and display each requested status, including closed ports. The scan is limited to 100 concurrent connections and may be partial if its timeout expires. It does not identify services or run vulnerability tests; use it only against systems you are authorized to inspect.
+Without `--port`, the `port` command checks TCP ports 1-65535 and displays open ports per resolved IP. Repeat `--port` to check selected ports and display each requested status, including closed ports; add `--open-only` to filter the displayed results to open ports. The flag does not change the scan or its summary. Scans are limited to 100 concurrent connections and may be partial if the timeout expires. The command does not identify services or run vulnerability tests; use it only against systems you are authorized to inspect.
 
 ## Verification
 

@@ -39,11 +39,12 @@ func TestParsePortValuesLimitsUniquePorts(t *testing.T) {
 }
 
 func TestPortCommandPassesOptionsAndPrintsJSON(t *testing.T) {
-	oldJSON, oldTimeout, oldPorts, oldScan := portJSONOutput, portTimeoutSec, portValues, portScan
+	oldJSON, oldOpenOnly, oldTimeout, oldPorts, oldScan := portJSONOutput, portOpenOnly, portTimeoutSec, portValues, portScan
 	t.Cleanup(func() {
-		portJSONOutput, portTimeoutSec, portValues, portScan = oldJSON, oldTimeout, oldPorts, oldScan
+		portJSONOutput, portOpenOnly, portTimeoutSec, portValues, portScan = oldJSON, oldOpenOnly, oldTimeout, oldPorts, oldScan
 	})
 	portJSONOutput = true
+	portOpenOnly = false
 	portTimeoutSec = 3
 	portValues = []string{"22", "443", "22"}
 	var gotTarget string
@@ -80,6 +81,45 @@ func TestPortCommandPassesOptionsAndPrintsJSON(t *testing.T) {
 	}
 	if result.Target != "example.com" || result.Protocol != "tcp" {
 		t.Errorf("JSON result = %#v, want normalized TCP target", result)
+	}
+}
+
+func TestPortCommandPassesOpenOnlyToJSONOutput(t *testing.T) {
+	oldJSON, oldOpenOnly, oldTimeout, oldPorts, oldScan := portJSONOutput, portOpenOnly, portTimeoutSec, portValues, portScan
+	t.Cleanup(func() {
+		portJSONOutput, portOpenOnly, portTimeoutSec, portValues, portScan = oldJSON, oldOpenOnly, oldTimeout, oldPorts, oldScan
+	})
+	portJSONOutput = true
+	portOpenOnly = true
+	portTimeoutSec = 5
+	portValues = []string{"22", "443"}
+	portScan = func(_ context.Context, target string, ports []int, _ time.Duration) portscan.Result {
+		return portscan.Result{
+			Target:         target,
+			RequestedPorts: ports,
+			Results: []portscan.PortResult{
+				{IP: "192.0.2.1", Port: 22, Status: portscan.StateClosed},
+				{IP: "192.0.2.1", Port: 443, Status: portscan.StateOpen},
+			},
+			Summary: portscan.Summary{Open: 1, Closed: 1, PortsPerAddress: 2},
+		}
+	}
+
+	var output bytes.Buffer
+	portCmd.SetOut(&output)
+	t.Cleanup(func() { portCmd.SetOut(nil) })
+	if err := portCmd.RunE(portCmd, []string{"example.com"}); err != nil {
+		t.Fatalf("RunE returned error: %v", err)
+	}
+	var result portscan.Result
+	if err := json.Unmarshal(output.Bytes(), &result); err != nil {
+		t.Fatalf("output is not valid JSON: %v", err)
+	}
+	if len(result.Results) != 1 || result.Results[0].Status != portscan.StateOpen {
+		t.Errorf("results = %#v, want only the open port", result.Results)
+	}
+	if result.Summary.Open != 1 || result.Summary.Closed != 1 {
+		t.Errorf("summary = %#v, want original counts", result.Summary)
 	}
 }
 
