@@ -11,7 +11,7 @@ import (
 var RootCmd = &cobra.Command{
 	Use:   "gqrnet",
 	Short: "gqrnet is an open-source networking and infrastructure CLI utility.",
-	Long:  `A fast and modular CLI designed to query DNS, TLS, HTTP, and network information.`,
+	Long:  `A fast and modular CLI designed to query DNS, TLS, HTTP, TCP ports, and network information.`,
 }
 
 // Execute triggers the Cobra execution pipeline.

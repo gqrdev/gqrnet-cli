@@ -15,10 +15,13 @@ go install github.com/gqrdev/gqrnet-cli/cmd/gqrnet@latest
 | `domain` | Run a complete inspection of a hostname | `gqrnet domain example.com` |
 | `dns` | Query DNS records only | `gqrnet dns example.com --type A --type MX` |
 | `http` | Passively inspect an HTTP or HTTPS URL | `gqrnet http https://example.com/login --headers --tls` |
+| `port` | Find open TCP ports or check selected ports | `gqrnet port example.com` |
 
-Add `--json` to any command for JSON output. Each command also accepts `--timeout` to set its timeout in seconds (default: 10).
+Add `--json` to any command for JSON output. Each command accepts `--timeout`; the default is 10 seconds, except `port`, which defaults to 120 seconds.
 
 See the [command usage guide](docs/commands.md) for flags, defaults, input requirements, and behavior details.
+
+Without `--port`, the `port` command checks TCP ports 1-65535 and displays open ports per resolved IP. Repeat `--port` to check selected ports and display each requested status, including closed ports. The scan is limited to 100 concurrent connections and may be partial if its timeout expires. It does not identify services or run vulnerability tests; use it only against systems you are authorized to inspect.
 
 ## Verification
 

@@ -11,14 +11,16 @@ cmd/
 	domain.go            Full-scan command and flags
 	dns.go               DNS-only command, flags, and input normalization
 	http.go              Passive HTTP security audit command
+	port.go              TCP port connectivity command
 	*_test.go            CLI tests
 internal/
 	domain/               Full-scan coordinator and result
 	dns/                  DNS queries and DNS result types
 	http/                 HTTP request inspection and passive URL audit
+	port/                 TCP port connectivity checks, full-range scan by default
 	tls/                  TLS handshake and certificate inspection
 	network/              IPv4/IPv6 resolution
-	output/               Text and JSON formatting, including HTTP audit output
+	output/               Text and JSON formatting for command results
 ```
 
 ## Architecture
@@ -26,7 +28,7 @@ internal/
 - `cmd/root.go` defines and executes the root command. Each subcommand registers itself and its flags.
 - `cmd/` owns CLI concerns such as flags, argument parsing, and command-specific input normalization. Keep network inspection and scan coordination in `internal/`.
 - `internal/domain/scanner.go` coordinates network, DNS, HTTP, and TLS checks concurrently using a shared context.
-- `internal/dns/`, `internal/http/`, `internal/tls/`, and `internal/network/` implement the corresponding checks. The standalone `http` command performs one passive GET for an absolute URL and reports selected security-related response metadata; it does not follow redirects, read the response body, or run active vulnerability tests. `internal/output/` formats results and does not perform inspections.
+- `internal/dns/`, `internal/http/`, `internal/port/`, `internal/tls/`, and `internal/network/` implement the corresponding checks. The standalone `http` command performs one passive GET for an absolute URL and reports selected security-related response metadata; it does not follow redirects, read the response body, or run active vulnerability tests. The standalone `port` command checks TCP ports 1-65535 by default and displays open ports per resolved IP; repeat `--port` to check a selected list (up to 100 unique ports) and report every requested state. It uses at most 100 concurrent connections, defaults to a 120-second timeout, and marks timed-out/incomplete scans; it does not detect services or run vulnerability tests. `internal/output/` formats results and does not perform inspections.
 - DNS uses `github.com/miekg/dns`; HTTP, TLS, and IP resolution use Go standard-library packages.
 
 ## Command Behavior
@@ -37,6 +39,7 @@ internal/
 - `dns --server` selects an explicit DNS server. Port 53 is added if omitted. Without this flag, the DNS package reads `/etc/resolv.conf`; do not assume this implies identical resolver behavior on every platform.
 - DNS retries a truncated response over TCP. Its JSON output serializes `internal/dns.Result`; preserve that result's existing string-based fields unless a requested change explicitly updates the output contract and its tests.
 - `gqrnet http <url>` accepts one absolute HTTP or HTTPS URL. It reports security headers, cookie attributes without values, the initial redirect with query values redacted, and TLS details from the request connection. With no section flags it prints all sections; `--headers`, `--cookies`, `--redirects`, and `--tls` filter the detailed sections. `--json` and `--timeout` are supported.
+- `gqrnet port <target-domain>` accepts one hostname. Without `--port`, it scans TCP ports 1-65535; repeat `--port` to select up to 100 unique ports and show each requested state, including closed. It checks at most 100 connections concurrently and supports `--json` and a positive `--timeout` (default: 120 seconds). The full scan lists open ports and summarizes other outcomes; an incomplete scan is marked as such. A timeout is not classified as a closed port. Use it only on systems you are authorized to inspect.
 
 ## Change Guidelines
 
