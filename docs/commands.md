@@ -90,12 +90,14 @@ gqrnet port <target-domain> [--port <port> ...] [flags]
 | `--open-only` | `false` | Show only open ports in the detailed results. Does not change which ports are checked or the summary counts. |
 | `--json` | `false` | Print the detailed result as JSON instead of text. |
 | `--timeout` | `120` | Set the overall scan timeout in seconds; must be greater than zero. |
+| `--connect-timeout` | `3` | Set the timeout for each TCP connection attempt in seconds; must be greater than zero. |
 
 ```bash
 gqrnet port example.com
 gqrnet port example.com --json
 gqrnet port example.com --port 22 --port 443 --timeout 5
+gqrnet port gqrlabs.com --port 1000 --connect-timeout 3 --timeout 10
 gqrnet port example.com --port 22 --port 80 --port 443 --open-only --json
 ```
 
-The result includes resolved IPv4/IPv6 addresses. In the full-range mode, details list only open ports while the summary counts closed, timed-out, cancelled, errored, and unstarted checks. With explicit ports, details include the status of each requested check unless `--open-only` is set. The flag filters detailed results in both text and JSON without changing the checks or summary; it is redundant in full-range mode, which already displays only open ports. `complete: false` means the scan did not obtain a conclusive result for every address/port. `open` means the TCP connection succeeded; `closed` means the connection was explicitly refused; `timeout` does not prove that the port is closed or filtered. Other failures and cancellations are reported separately. A `service_hint`, if present, is only the conventional service name associated with a port number, not a detected service. The scan uses at most 100 concurrent connections and may take the full timeout, especially when destinations do not respond. Run it only against systems you are authorized to inspect.
+The result includes resolved IPv4/IPv6 addresses. In the full-range mode, details list only open ports while the summary counts closed, timed-out, cancelled, errored, and unstarted checks. With explicit ports, details include the status of each requested check unless `--open-only` is set. The flag filters detailed results in both text and JSON without changing the checks or summary; it is redundant in full-range mode, which already displays only open ports. `--timeout` is the overall limit for resolution and scanning; `--connect-timeout` limits each TCP connection attempt independently, subject to the remaining overall time. `complete: false` means the scan did not obtain a conclusive result for every address/port. `open` means the TCP connection succeeded; `closed` means the connection was explicitly refused; `timeout` does not prove that the port is closed or filtered. Other failures and cancellations are reported separately. A `service_hint`, if present, is only the conventional service name associated with a port number, not a detected service. The scan uses at most 100 concurrent connections and may take the full overall timeout. Run it only against systems you are authorized to inspect.

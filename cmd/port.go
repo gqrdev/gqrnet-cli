@@ -12,11 +12,12 @@ import (
 )
 
 var (
-	portJSONOutput bool
-	portOpenOnly   bool
-	portTimeoutSec = 120
-	portValues     []string
-	portScan       = portscan.Scan
+	portJSONOutput        bool
+	portOpenOnly          bool
+	portTimeoutSec        = 120
+	portConnectTimeoutSec = 3
+	portValues            []string
+	portScan              = portscan.Scan
 )
 
 var portCmd = &cobra.Command{
@@ -31,6 +32,9 @@ var portCmd = &cobra.Command{
 		if portTimeoutSec <= 0 {
 			return errors.New("timeout must be greater than zero seconds")
 		}
+		if portConnectTimeoutSec <= 0 {
+			return errors.New("connect-timeout must be greater than zero seconds")
+		}
 		var ports []int
 		if len(portValues) > 0 {
 			ports, err = parsePortValues(portValues)
@@ -40,13 +44,14 @@ var portCmd = &cobra.Command{
 		}
 
 		timeout := time.Duration(portTimeoutSec) * time.Second
+		connectTimeout := time.Duration(portConnectTimeoutSec) * time.Second
 		parent := cmd.Context()
 		if parent == nil {
 			parent = context.Background()
 		}
 		ctx, cancel := context.WithTimeout(parent, timeout)
 		defer cancel()
-		result := portScan(ctx, target, ports, timeout)
+		result := portScan(ctx, target, ports, timeout, connectTimeout)
 
 		if portJSONOutput {
 			return output.PrintPortJSON(cmd.OutOrStdout(), result, portOpenOnly)
@@ -60,6 +65,7 @@ func init() {
 	portCmd.Flags().BoolVar(&portJSONOutput, "json", false, "Output results in JSON format")
 	portCmd.Flags().BoolVar(&portOpenOnly, "open-only", false, "Show only open ports; scan all selected ports as usual")
 	portCmd.Flags().IntVar(&portTimeoutSec, "timeout", 120, "Execution timeout in seconds")
+	portCmd.Flags().IntVar(&portConnectTimeoutSec, "connect-timeout", 3, "Timeout for each TCP connection attempt in seconds")
 	portCmd.Flags().StringArrayVar(&portValues, "port", nil, "TCP port to check (repeatable; 1-65535, max 100 unique ports)")
 
 	RootCmd.AddCommand(portCmd)

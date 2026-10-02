@@ -30,7 +30,7 @@ func TestScanReportsOpenAndClosedPorts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result := scan(context.Background(), "example.test", []int{openPort, closedPort}, time.Second,
+	result := scan(context.Background(), "example.test", []int{openPort, closedPort}, time.Second, time.Second,
 		func(context.Context, string) network.Result { return network.Result{IPv4: []string{"127.0.0.1"}} },
 		&net.Dialer{},
 	)
@@ -80,7 +80,7 @@ func TestScanDefaultsToFullRangeAndRetainsOnlyOpenPorts(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	dialer := &fullScanDialer{}
-	result := scan(ctx, "example.test", nil, 5*time.Second,
+	result := scan(ctx, "example.test", nil, 5*time.Second, time.Second,
 		func(context.Context, string) network.Result { return network.Result{IPv4: []string{"127.0.0.1"}} },
 		dialer,
 	)
@@ -100,7 +100,7 @@ func TestScanDefaultsToFullRangeAndRetainsOnlyOpenPorts(t *testing.T) {
 }
 
 func TestScanRecordsResolutionError(t *testing.T) {
-	result := scan(context.Background(), "example.test", []int{443}, time.Second,
+	result := scan(context.Background(), "example.test", []int{443}, time.Second, time.Second,
 		func(context.Context, string) network.Result { return network.Result{Error: "lookup failed"} },
 		&net.Dialer{},
 	)
@@ -115,6 +115,37 @@ func TestScanRecordsResolutionError(t *testing.T) {
 type blockingDialer struct {
 	active  atomic.Int32
 	maximum atomic.Int32
+}
+
+type deadlineRecordingDialer struct {
+	connectionDeadline time.Time
+}
+
+func (dialer *deadlineRecordingDialer) DialContext(ctx context.Context, _, _ string) (net.Conn, error) {
+	dialer.connectionDeadline, _ = ctx.Deadline()
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestScanAppliesPerConnectionTimeout(t *testing.T) {
+	globalDeadline := time.Now().Add(time.Second)
+	ctx, cancel := context.WithDeadline(context.Background(), globalDeadline)
+	defer cancel()
+	dialer := &deadlineRecordingDialer{}
+	result := scan(ctx, "example.test", []int{1000}, time.Second, 20*time.Millisecond,
+		func(context.Context, string) network.Result { return network.Result{IPv4: []string{"127.0.0.1"}} },
+		dialer,
+	)
+
+	if !dialer.connectionDeadline.Before(globalDeadline) {
+		t.Errorf("connection deadline = %v, global deadline = %v; want connection deadline first", dialer.connectionDeadline, globalDeadline)
+	}
+	if len(result.Results) != 1 || result.Results[0].Status != StateTimeout {
+		t.Errorf("results = %#v, want one timeout result", result.Results)
+	}
+	if result.Complete {
+		t.Error("scan with a connection timeout must be incomplete")
+	}
 }
 
 func (dialer *blockingDialer) DialContext(ctx context.Context, _, _ string) (net.Conn, error) {
@@ -137,7 +168,7 @@ func TestScanBoundsConcurrencyAndMarksUnstartedChecks(t *testing.T) {
 	for index := range ports {
 		ports[index] = 1000 + index
 	}
-	result := scan(ctx, "example.test", ports, 50*time.Millisecond,
+	result := scan(ctx, "example.test", ports, 50*time.Millisecond, time.Second,
 		func(context.Context, string) network.Result { return network.Result{IPv4: []string{"127.0.0.1"}} },
 		dialer,
 	)

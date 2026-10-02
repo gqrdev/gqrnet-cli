@@ -55,11 +55,11 @@ type checkOutcome struct {
 }
 
 // Scan resolves target and checks each requested TCP port on every resolved IP.
-func Scan(ctx context.Context, target string, ports []int, timeout time.Duration) Result {
-	return scan(ctx, target, ports, timeout, network.ResolveIPs, &net.Dialer{})
+func Scan(ctx context.Context, target string, ports []int, timeout, connectTimeout time.Duration) Result {
+	return scan(ctx, target, ports, timeout, connectTimeout, network.ResolveIPs, &net.Dialer{})
 }
 
-func scan(ctx context.Context, target string, ports []int, timeout time.Duration, resolve resolver, dialer contextDialer) Result {
+func scan(ctx context.Context, target string, ports []int, timeout, connectTimeout time.Duration, resolve resolver, dialer contextDialer) Result {
 	started := time.Now()
 	fullScan := len(ports) == 0
 	portCount := len(ports)
@@ -130,7 +130,9 @@ func scan(ctx context.Context, target string, ports []int, timeout time.Duration
 					continue
 				}
 				startedCheck := time.Now()
-				connection, err := dialer.DialContext(ctx, "tcp", net.JoinHostPort(job.address.IP, strconv.Itoa(job.port)))
+				checkCtx, cancel := context.WithTimeout(ctx, connectTimeout)
+				connection, err := dialer.DialContext(checkCtx, "tcp", net.JoinHostPort(job.address.IP, strconv.Itoa(job.port)))
+				cancel()
 				check := PortResult{
 					IP:            job.address.IP,
 					Family:        job.address.Family,
