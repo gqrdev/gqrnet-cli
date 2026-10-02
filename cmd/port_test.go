@@ -39,21 +39,23 @@ func TestParsePortValuesLimitsUniquePorts(t *testing.T) {
 }
 
 func TestPortCommandPassesOptionsAndPrintsJSON(t *testing.T) {
-	oldJSON, oldOpenOnly, oldTimeout, oldPorts, oldScan := portJSONOutput, portOpenOnly, portTimeoutSec, portValues, portScan
+	oldJSON, oldOpenOnly, oldTimeout, oldConnectTimeout, oldPorts, oldScan := portJSONOutput, portOpenOnly, portTimeoutSec, portConnectTimeoutSec, portValues, portScan
 	t.Cleanup(func() {
-		portJSONOutput, portOpenOnly, portTimeoutSec, portValues, portScan = oldJSON, oldOpenOnly, oldTimeout, oldPorts, oldScan
+		portJSONOutput, portOpenOnly, portTimeoutSec, portConnectTimeoutSec, portValues, portScan = oldJSON, oldOpenOnly, oldTimeout, oldConnectTimeout, oldPorts, oldScan
 	})
 	portJSONOutput = true
 	portOpenOnly = false
 	portTimeoutSec = 3
+	portConnectTimeoutSec = 2
 	portValues = []string{"22", "443", "22"}
 	var gotTarget string
 	var gotPorts []int
-	var gotTimeout time.Duration
-	portScan = func(ctx context.Context, target string, ports []int, timeout time.Duration) portscan.Result {
+	var gotTimeout, gotConnectTimeout time.Duration
+	portScan = func(ctx context.Context, target string, ports []int, timeout, connectTimeout time.Duration) portscan.Result {
 		gotTarget = target
 		gotPorts = ports
 		gotTimeout = timeout
+		gotConnectTimeout = connectTimeout
 		if _, ok := ctx.Deadline(); !ok {
 			t.Error("scan context has no deadline")
 		}
@@ -75,6 +77,9 @@ func TestPortCommandPassesOptionsAndPrintsJSON(t *testing.T) {
 	if gotTimeout != 3*time.Second {
 		t.Errorf("timeout = %v, want 3s", gotTimeout)
 	}
+	if gotConnectTimeout != 2*time.Second {
+		t.Errorf("connect timeout = %v, want 2s", gotConnectTimeout)
+	}
 	var result portscan.Result
 	if err := json.Unmarshal(output.Bytes(), &result); err != nil {
 		t.Fatalf("output is not valid JSON: %v", err)
@@ -93,7 +98,7 @@ func TestPortCommandPassesOpenOnlyToJSONOutput(t *testing.T) {
 	portOpenOnly = true
 	portTimeoutSec = 5
 	portValues = []string{"22", "443"}
-	portScan = func(_ context.Context, target string, ports []int, _ time.Duration) portscan.Result {
+	portScan = func(_ context.Context, target string, ports []int, _, _ time.Duration) portscan.Result {
 		return portscan.Result{
 			Target:         target,
 			RequestedPorts: ports,
@@ -131,7 +136,7 @@ func TestPortCommandDefaultsToFullScan(t *testing.T) {
 	portJSONOutput = false
 	portTimeoutSec = 120
 	portValues = nil
-	portScan = func(_ context.Context, target string, ports []int, timeout time.Duration) portscan.Result {
+	portScan = func(_ context.Context, target string, ports []int, timeout, _ time.Duration) portscan.Result {
 		if target != "example.com" {
 			t.Errorf("target = %q, want example.com", target)
 		}
@@ -167,7 +172,7 @@ func TestPortCommandRejectsInvalidTimeoutBeforeScan(t *testing.T) {
 	t.Cleanup(func() { portTimeoutSec, portValues, portScan = oldTimeout, oldPorts, oldScan })
 	portTimeoutSec = 0
 	portValues = []string{"443"}
-	portScan = func(context.Context, string, []int, time.Duration) portscan.Result {
+	portScan = func(context.Context, string, []int, time.Duration, time.Duration) portscan.Result {
 		t.Fatal("scanner called with invalid timeout")
 		return portscan.Result{}
 	}
@@ -176,11 +181,25 @@ func TestPortCommandRejectsInvalidTimeoutBeforeScan(t *testing.T) {
 	}
 }
 
+func TestPortCommandRejectsInvalidConnectTimeoutBeforeScan(t *testing.T) {
+	oldConnectTimeout, oldPorts, oldScan := portConnectTimeoutSec, portValues, portScan
+	t.Cleanup(func() { portConnectTimeoutSec, portValues, portScan = oldConnectTimeout, oldPorts, oldScan })
+	portConnectTimeoutSec = 0
+	portValues = []string{"443"}
+	portScan = func(context.Context, string, []int, time.Duration, time.Duration) portscan.Result {
+		t.Fatal("scanner called with invalid connect timeout")
+		return portscan.Result{}
+	}
+	if err := portCmd.RunE(portCmd, []string{"example.com"}); err == nil {
+		t.Fatal("expected connect timeout validation error")
+	}
+}
+
 func TestPortCommandRejectsInvalidPortsBeforeScan(t *testing.T) {
 	oldPorts, oldScan := portValues, portScan
 	t.Cleanup(func() { portValues, portScan = oldPorts, oldScan })
 	portValues = []string{"70000"}
-	portScan = func(context.Context, string, []int, time.Duration) portscan.Result {
+	portScan = func(context.Context, string, []int, time.Duration, time.Duration) portscan.Result {
 		t.Fatal("scanner called with invalid port")
 		return portscan.Result{}
 	}
@@ -194,7 +213,7 @@ func TestPortCommandTextOutputByDefault(t *testing.T) {
 	t.Cleanup(func() { portJSONOutput, portValues, portScan = oldJSON, oldPorts, oldScan })
 	portJSONOutput = false
 	portValues = []string{"443"}
-	portScan = func(context.Context, string, []int, time.Duration) portscan.Result {
+	portScan = func(context.Context, string, []int, time.Duration, time.Duration) portscan.Result {
 		return portscan.Result{
 			Target:         "example.com",
 			Protocol:       "tcp",
