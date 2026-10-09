@@ -11,12 +11,13 @@ cmd/
 	domain.go            Full-scan command and flags
 	dns.go               DNS-only command, flags, and input normalization
 	http.go              Passive HTTP security audit command
+	redirects.go         HTTP redirect-chain command
 	port.go              TCP port connectivity command
 	*_test.go            CLI tests
 internal/
 	domain/               Full-scan coordinator and result
 	dns/                  DNS queries and DNS result types
-	http/                 HTTP request inspection and passive URL audit
+	http/                 HTTP request inspection, passive URL audit, and redirect-chain following
 	port/                 TCP port connectivity checks, full-range scan by default
 	tls/                  TLS handshake and certificate inspection
 	network/              IPv4/IPv6 resolution
@@ -39,6 +40,7 @@ internal/
 - `dns --server` selects an explicit DNS server. Port 53 is added if omitted. Without this flag, the DNS package reads `/etc/resolv.conf`; do not assume this implies identical resolver behavior on every platform.
 - DNS retries a truncated response over TCP. Its JSON output serializes `internal/dns.Result`; preserve that result's existing string-based fields unless a requested change explicitly updates the output contract and its tests.
 - `gqrnet http <url>` accepts one absolute HTTP or HTTPS URL. It reports security headers, cookie attributes without values, the initial redirect with query values redacted, and TLS details from the request connection. With no section flags it prints all sections; `--headers`, `--cookies`, `--redirects`, and `--tls` filter the detailed sections. `--json` and `--timeout` are supported.
+- `gqrnet redirects <url>` follows the HTTP(S) redirect chain from one absolute URL; it does not crawl the site. It supports `--json`, a positive `--timeout` (default: 10 seconds), and `--max-redirects` (default: 10). The deprecated `--max-hops` flag remains an alias. Redirect destinations with credentials or non-HTTP(S) schemes are rejected, query values are redacted in output, and cycles, request errors, timeouts, or exceeding the redirect limit produce an incomplete result.
 - `gqrnet port <target-domain>` accepts one hostname. Without `--port`, it scans TCP ports 1-65535; repeat `--port` to select up to 100 unique ports and show each requested state, including closed. It checks at most 100 connections concurrently and supports `--json` and a positive `--timeout` (default: 120 seconds). The full scan lists open ports and summarizes other outcomes; an incomplete scan is marked as such. A timeout is not classified as a closed port. Use it only on systems you are authorized to inspect.
 
 ## Change Guidelines

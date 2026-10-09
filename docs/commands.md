@@ -76,6 +76,27 @@ gqrnet http https://example.com/login?next=%2Faccount --json
 
 The command sends a single GET request, does not follow redirects, and does not inspect the response body. It reports the initial redirect destination when present. Cookie values are not included, and query values are redacted in the reported URL and redirect destination.
 
+## `redirects`
+
+Follow and report the HTTP(S) redirect chain starting from one URL. This command does not crawl links or discover every redirect on a site.
+
+```text
+gqrnet redirects <url> [flags]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--json` | `false` | Print the result as JSON instead of text. |
+| `--timeout` | `10` | Set the overall timeout in seconds; must be greater than zero. |
+| `--max-redirects` | `10` | Maximum number of redirect destinations to follow; must be greater than zero. |
+
+```bash
+gqrnet redirects https://example.com
+gqrnet redirects http://example.com --max-redirects 5 --timeout 20 --json
+```
+
+The target must be an absolute HTTP or HTTPS URL without credentials. Redirect destinations are resolved relative to the current URL; destinations with credentials or a non-HTTP(S) scheme are rejected. Query values are redacted in displayed URLs. A cycle, request error, timeout, or redirect beyond `--max-redirects` leaves the result incomplete; the output includes the observed chain and its final status when available. The old `--max-hops` flag remains available as a deprecated alias.
+
 ## `port`
 
 Without `--port`, check the full TCP range `1-65535` on every IP address resolved for a hostname and display open ports. With explicit `--port` values, display the state of every requested port, including closed ports. This is a connection check only; it does not read service banners or run vulnerability tests.
