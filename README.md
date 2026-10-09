@@ -15,9 +15,12 @@ go install github.com/gqrdev/gqrnet-cli/cmd/gqrnet@latest
 | `domain` | Run a complete inspection of a hostname | `gqrnet domain example.com` |
 | `dns` | Query DNS records only | `gqrnet dns example.com --type A --type MX` |
 | `http` | Passively inspect an HTTP or HTTPS URL | `gqrnet http https://example.com/login --headers --tls` |
+| `redirects` | Follow an HTTP redirect chain for a URL | `gqrnet redirects https://example.com --json` |
 | `port` | Find open TCP ports or check selected ports | `gqrnet port example.com` |
 
 Add `--json` to any command for JSON output. Each command accepts `--timeout`; the default is 10 seconds, except `port`, which defaults to 120 seconds.
+
+The `redirects` command follows one URL's HTTP(S) redirect chain, up to 10 hops by default. It does not crawl every page on the domain.
 
 See the [command usage guide](docs/commands.md) for flags, defaults, input requirements, and behavior details.
 
