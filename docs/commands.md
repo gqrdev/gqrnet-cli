@@ -49,6 +49,27 @@ gqrnet dns example.com --server 1.1.1.1 --json
 
 The target must be a hostname without a scheme, path, or port; IP addresses are not accepted. DNS query failures are included in the result and do not by themselves make the command fail.
 
+## `mail`
+
+Inspect the domain's mail-routing and sender-authentication DNS records.
+
+```text
+gqrnet mail <target-domain> [flags]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--json` | `false` | Print the result as JSON instead of text. |
+| `--timeout` | `10` | Set the query timeout in seconds; must be greater than zero. |
+| `--server` | System DNS configuration | Select a DNS server. A port defaults to `53` when omitted. |
+
+```bash
+gqrnet mail example.com
+gqrnet mail example.com --server 1.1.1.1 --json
+```
+
+The command checks MX records and looks for SPF in TXT records at the domain root and DMARC in TXT records at `_dmarc.<target-domain>`. Each check reports a status and any matching records. A Null MX means the domain explicitly does not accept email. DNS lookup failures are reported as indeterminate, not as missing records. This is a passive DNS check; it does not connect to mail servers, verify delivery, or fully validate SPF/DMARC syntax.
+
 ## `http`
 
 Make one passive HTTP request and report response metadata and selected security-related information. This command does not run active vulnerability tests.
