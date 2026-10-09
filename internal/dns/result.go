@@ -42,17 +42,22 @@ func QueryDNS(ctx context.Context, domain string) Result {
 	return QueryDNSWithOptions(ctx, domain, Options{})
 }
 
+// QueryRecords queries one DNS record type and returns the response RCODE separately from transport errors.
+func QueryRecords(ctx context.Context, name string, qtype uint16, server string) ([]dns.RR, int, error) {
+	address, err := resolveDNSServer(server)
+	if err != nil {
+		return nil, 0, err
+	}
+	return queryDNSRecords(ctx, name, qtype, address)
+}
+
 // QueryDNSWithOptions queries selected record types using an optional DNS server.
 func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Result {
 	var res Result
-	dnsServer := options.Server
-	if dnsServer == "" {
-		config, err := dns.ClientConfigFromFile("/etc/resolv.conf")
-		if err != nil || len(config.Servers) == 0 {
-			res.Error = "unable to read system DNS configuration"
-			return res
-		}
-		dnsServer = net.JoinHostPort(config.Servers[0], config.Port)
+	dnsServer, err := resolveDNSServer(options.Server)
+	if err != nil {
+		res.Error = err.Error()
+		return res
 	}
 	queryTypes := options.Types
 	if len(queryTypes) == 0 {
@@ -62,38 +67,20 @@ func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Re
 
 	// Helper to send DNS requests safely
 	lookup := func(qtype uint16) ([]string, error) {
-		m := new(dns.Msg)
-		// Ensure fully qualified domain name ending with a dot
-		m.SetQuestion(dns.Fqdn(domain), qtype)
-
-		resolver := &dns.Client{}
-		in, _, err := resolver.ExchangeContext(ctx, m, dnsServer)
+		answers, rcode, err := queryDNSRecords(ctx, domain, qtype, dnsServer)
 		if err != nil {
 			return nil, err
 		}
-		if in == nil {
-			return nil, fmt.Errorf("DNS server returned an empty response")
-		}
-		if in.Truncated {
-			resolver.Net = "tcp"
-			in, _, err = resolver.ExchangeContext(ctx, m, dnsServer)
-			if err != nil {
-				return nil, err
-			}
-			if in == nil {
-				return nil, fmt.Errorf("DNS server returned an empty response")
-			}
-		}
-		if in.Rcode != dns.RcodeSuccess {
-			rcode, ok := dns.RcodeToString[in.Rcode]
+		if rcode != dns.RcodeSuccess {
+			rcodeName, ok := dns.RcodeToString[rcode]
 			if !ok {
-				rcode = fmt.Sprintf("RCODE%d", in.Rcode)
+				rcodeName = fmt.Sprintf("RCODE%d", rcode)
 			}
-			return nil, fmt.Errorf("DNS server returned %s", rcode)
+			return nil, fmt.Errorf("DNS server returned %s", rcodeName)
 		}
 
 		var records []string
-		for _, ans := range in.Answer {
+		for _, ans := range answers {
 			switch r := ans.(type) {
 			case *dns.A:
 				records = append(records, r.A.String())
@@ -147,4 +134,40 @@ func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Re
 
 	res.Error = strings.Join(queryErrors, "; ")
 	return res
+}
+
+func resolveDNSServer(server string) (string, error) {
+	if server != "" {
+		return server, nil
+	}
+	config, err := dns.ClientConfigFromFile("/etc/resolv.conf")
+	if err != nil || len(config.Servers) == 0 {
+		return "", fmt.Errorf("unable to read system DNS configuration")
+	}
+	return net.JoinHostPort(config.Servers[0], config.Port), nil
+}
+
+func queryDNSRecords(ctx context.Context, name string, qtype uint16, server string) ([]dns.RR, int, error) {
+	request := new(dns.Msg)
+	request.SetQuestion(dns.Fqdn(name), qtype)
+
+	resolver := &dns.Client{}
+	response, _, err := resolver.ExchangeContext(ctx, request, server)
+	if err != nil {
+		return nil, 0, err
+	}
+	if response == nil {
+		return nil, 0, fmt.Errorf("DNS server returned an empty response")
+	}
+	if response.Truncated {
+		resolver.Net = "tcp"
+		response, _, err = resolver.ExchangeContext(ctx, request, server)
+		if err != nil {
+			return nil, 0, err
+		}
+		if response == nil {
+			return nil, 0, fmt.Errorf("DNS server returned an empty response")
+		}
+	}
+	return response.Answer, response.Rcode, nil
 }
