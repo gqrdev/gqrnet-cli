@@ -72,6 +72,69 @@ func TestQueryDNSWithOptionsKeepsSuccessfulTypesAndReportsRcode(t *testing.T) {
 	}
 }
 
+func TestQueryDNSWithOptionsDecodesExtendedTypesAndContinuesOnNotImplemented(t *testing.T) {
+	packetConn, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("ListenPacket returned error: %v", err)
+	}
+	server := &mdns.Server{
+		PacketConn: packetConn,
+		Handler: mdns.HandlerFunc(func(w mdns.ResponseWriter, request *mdns.Msg) {
+			question := request.Question[0]
+			response := new(mdns.Msg)
+			response.SetReply(request)
+			if question.Qtype == mdns.TypeCAA {
+				response.Rcode = mdns.RcodeNotImplemented
+				_ = w.WriteMsg(response)
+				return
+			}
+
+			rrText := map[uint16]string{
+				mdns.TypeSRV:   question.Name + " 60 IN SRV 10 5 5060 sip.example.com.",
+				mdns.TypeSVCB:  question.Name + " 60 IN SVCB 1 svc.example.com. alpn=h2",
+				mdns.TypeHTTPS: question.Name + " 60 IN HTTPS 1 . alpn=h2",
+				mdns.TypePTR:   question.Name + " 60 IN PTR host.example.com.",
+			}
+			rr, parseErr := mdns.NewRR(rrText[question.Qtype])
+			if parseErr != nil {
+				t.Errorf("NewRR(%q): %v", rrText[question.Qtype], parseErr)
+				return
+			}
+			response.Answer = append(response.Answer, rr)
+			_ = w.WriteMsg(response)
+		}),
+	}
+	go func() { _ = server.ActivateAndServe() }()
+	t.Cleanup(func() { _ = server.Shutdown() })
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	result := QueryDNSWithOptions(ctx, "example.com", Options{
+		Server: packetConn.LocalAddr().String(),
+		Types:  []uint16{mdns.TypeCAA, mdns.TypeSRV, mdns.TypeSVCB, mdns.TypeHTTPS, mdns.TypePTR},
+	})
+
+	if !strings.Contains(result.Error, "CAA: DNS server returned NOTIMP") {
+		t.Errorf("error = %q, want CAA NOTIMP", result.Error)
+	}
+	for _, test := range []struct {
+		name    string
+		records []string
+	}{
+		{name: "SRV", records: result.SRV},
+		{name: "SVCB", records: result.SVCB},
+		{name: "HTTPS", records: result.HTTPS},
+		{name: "PTR", records: result.PTR},
+	} {
+		if len(test.records) != 1 {
+			t.Errorf("%s records = %v, want one record", test.name, test.records)
+		}
+	}
+	if len(result.PTR) == 1 && !strings.Contains(result.PTR[0], "host.example.com.") {
+		t.Errorf("PTR records = %v, want host.example.com.", result.PTR)
+	}
+}
+
 func TestQueryRecordsReturnsRcodeSeparately(t *testing.T) {
 	packetConn, err := net.ListenPacket("udp", "127.0.0.1:0")
 	if err != nil {

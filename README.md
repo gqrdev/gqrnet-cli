@@ -25,6 +25,8 @@ The `redirects` command follows one URL's HTTP(S) redirect chain, up to 10 hops 
 
 The `mail` command checks MX, SPF, and DMARC DNS records. It is a passive configuration check, not a test of email delivery or a complete policy validator.
 
+For reverse DNS PTR lookups, use `gqrnet dns reverse <ip>`. The `dns` command also supports explicit `--type` queries for CAA, SRV, SVCB, and HTTPS records; DNS servers may not support every record type.
+
 See the [command usage guide](docs/commands.md) for flags, defaults, input requirements, and behavior details.
 
 Without `--port`, the `port` command checks TCP ports 1-65535 and displays open ports per resolved IP. Repeat `--port` to check selected ports and display each requested status, including closed ports; add `--open-only` to filter the displayed results to open ports. The flag does not change the scan or its summary. Scans are limited to 100 concurrent connections and may be partial if the timeout expires. The command does not identify services or run vulnerability tests; use it only against systems you are authorized to inspect.

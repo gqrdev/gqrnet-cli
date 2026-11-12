@@ -28,9 +28,24 @@ func PrintDNSText(w io.Writer, domain string, result dnsquery.Result) {
 	}
 	fmt.Fprintf(w, " A:     %s\n", strings.Join(result.A, ", "))
 	fmt.Fprintf(w, " AAAA:  %s\n", strings.Join(result.AAAA, ", "))
+	fmt.Fprintf(w, " CAA:   %s\n", strings.Join(result.CAA, ", "))
 	fmt.Fprintf(w, " CNAME: %s\n", strings.Join(result.CNAME, ", "))
+	fmt.Fprintf(w, " HTTPS: %s\n", strings.Join(result.HTTPS, ", "))
 	fmt.Fprintf(w, " MX:    %s\n", strings.Join(result.MX, ", "))
 	fmt.Fprintf(w, " NS:    %s\n", strings.Join(result.NS, ", "))
+	fmt.Fprintf(w, " PTR:   %s\n", strings.Join(result.PTR, ", "))
 	fmt.Fprintf(w, " SOA:   %s\n", strings.Join(result.SOA, ", "))
+	fmt.Fprintf(w, " SRV:   %s\n", strings.Join(result.SRV, ", "))
+	fmt.Fprintf(w, " SVCB:  %s\n", strings.Join(result.SVCB, ", "))
 	fmt.Fprintf(w, " TXT:   %s\n", strings.Join(result.TXT, ", "))
+}
+
+// PrintDNSReverseText presents a human-readable PTR lookup result.
+func PrintDNSReverseText(w io.Writer, ip string, result dnsquery.Result) {
+	fmt.Fprintf(w, "=== Reverse DNS: %s ===\n\n", ip)
+	fmt.Fprintln(w, "[ DNS Records ]")
+	if result.Error != "" {
+		fmt.Fprintf(w, " Error: %s\n", result.Error)
+	}
+	fmt.Fprintf(w, " PTR:   %s\n", strings.Join(result.PTR, ", "))
 }
