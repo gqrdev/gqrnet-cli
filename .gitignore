@@ -63,7 +63,14 @@ Temporary Items
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
+# -----------------------------------
 # VS Code server inside DevContainers
+# -----------------------------------
 .vscode-server/
 /post-merge.sh
 /.agents/
+
+# -------------------------
+# GitHub
+# -------------------------
+/.github/
