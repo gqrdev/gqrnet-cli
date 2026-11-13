@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.4.0 - 2026-11-13
+
+- Add reverse DNS PTR lookups and support for CAA, HTTPS, SRV, and SVCB records.
+- Update Go dependencies and the Docker base image.
+
 ## v1.3.0 - 2026-10-09
 
 - Add a mail DNS audit command for MX, SPF, and DMARC configuration.
