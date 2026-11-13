@@ -3,20 +3,50 @@ package tls
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
+	"strconv"
 	"time"
 )
 
+// Options configures a standalone TLS inspection.
+type Options struct {
+	Port       int
+	ServerName string
+}
+
 // InspectTLS connects via HTTPS port 443 to retrieve TLS certificate details.
 func InspectTLS(ctx context.Context, domain string) Result {
+	return InspectTLSWithOptions(ctx, domain, Options{})
+}
+
+// InspectTLSWithOptions connects to host and inspects its verified TLS connection.
+func InspectTLSWithOptions(ctx context.Context, host string, options Options) Result {
+	return inspectTLS(ctx, host, options, nil)
+}
+
+func inspectTLS(ctx context.Context, host string, options Options, rootCAs *x509.CertPool) Result {
 	var res Result
-	dialer := &tls.Dialer{
-		NetDialer: &net.Dialer{},
-		Config:    &tls.Config{InsecureSkipVerify: false},
+	port := options.Port
+	if port == 0 {
+		port = 443
+	}
+	if port < 1 || port > 65535 {
+		res.Error = "port must be an integer between 1 and 65535"
+		return res
 	}
 
-	conn, err := dialer.DialContext(ctx, "tcp", domain+":443")
+	dialer := &tls.Dialer{
+		NetDialer: &net.Dialer{},
+		Config: &tls.Config{
+			ServerName: options.ServerName,
+			RootCAs:    rootCAs,
+		},
+	}
+
+	address := net.JoinHostPort(host, strconv.Itoa(port))
+	conn, err := dialer.DialContext(ctx, "tcp", address)
 	if err != nil {
 		res.Error = err.Error()
 		return res
@@ -38,10 +68,23 @@ func InspectTLS(ctx context.Context, domain string) Result {
 	res.Version = getTLSVersionName(state.Version)
 	res.CipherSuite = tls.CipherSuiteName(state.CipherSuite)
 	res.Issuer = cert.Issuer.CommonName
+	if res.Issuer == "" {
+		res.Issuer = cert.Issuer.String()
+	}
 	res.Subject = cert.Subject.CommonName
+	if res.Subject == "" {
+		res.Subject = cert.Subject.String()
+	}
+	if res.Subject == "" && len(cert.DNSNames) > 0 {
+		res.Subject = cert.DNSNames[0]
+	}
+	if res.Subject == "" && len(cert.IPAddresses) > 0 {
+		res.Subject = cert.IPAddresses[0].String()
+	}
 	res.NotBefore = cert.NotBefore
 	res.NotAfter = cert.NotAfter
 	res.DaysValid = int(time.Until(cert.NotAfter).Hours() / 24)
+	res.Verified = true
 
 	return res
 }

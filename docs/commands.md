@@ -2,7 +2,7 @@
 
 Use `gqrnet --help` to list commands and `gqrnet <command> --help` to see a command's flags.
 
-All commands accept exactly one target. `domain`, `dns`, and `port` expect a hostname, not a URL, IP address, path, or port. They remove one trailing dot from a hostname. All commands accept `--json` for JSON output and `--timeout` for a positive timeout in seconds (default: 10, except `port`, which defaults to 120).
+All commands accept exactly one target. `domain`, `dns`, and `port` expect a hostname, not a URL, IP address, path, or port. `tls` accepts a hostname or IP address. Commands remove one trailing dot from hostnames where applicable. All commands accept `--json` for JSON output and `--timeout` for a positive timeout in seconds (default: 10, except `port`, which defaults to 120).
 
 ## `domain`
 
@@ -23,6 +23,29 @@ gqrnet domain example.com --json --timeout 15
 ```
 
 The target must be a hostname without a scheme, path, or port. IP addresses are not accepted. Inspection errors are reported in the result.
+
+## `tls`
+
+Inspect a TLS connection and its certificate without running the complete domain scan.
+
+```text
+gqrnet tls <host> [flags]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--json` | `false` | Print the result as JSON instead of text. |
+| `--timeout` | `10` | Set the connection timeout in seconds; must be greater than zero. |
+| `--port` | `443` | Set the TLS service port; must be between `1` and `65535`. |
+| `--server-name` | Hostname target, when applicable | Set the TLS SNI name and the hostname used to verify the certificate. |
+
+```bash
+gqrnet tls example.com
+gqrnet tls 192.0.2.10 --server-name example.com --port 8443 --json
+gqrnet tls 2001:db8::10 --server-name example.com
+```
+
+The target must be a hostname or IP address without a scheme, path, or port. The command reports the negotiated protocol and cipher suite, certificate subject, issuer and validity dates, and whether the connection's certificate was verified. Certificate verification is always enabled; connection or verification failures are reported as errors.
 
 ## `dns`
 

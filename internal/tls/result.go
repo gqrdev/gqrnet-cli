@@ -11,5 +11,6 @@ type Result struct {
 	NotBefore   time.Time `json:"not_before"`
 	NotAfter    time.Time `json:"not_after"`
 	DaysValid   int       `json:"days_valid"`
+	Verified    bool      `json:"verified"`
 	Error       string    `json:"error,omitempty"`
 }
