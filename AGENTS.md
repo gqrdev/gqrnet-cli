@@ -1,13 +1,33 @@
 # gqrnet
 
-gqrnet is a Go CLI for querying DNS and mail records, inspecting HTTP response metadata, following URL redirect chains, inspecting TLS certificates, resolving IPv4/IPv6 addresses, and checking TCP connectivity on ports 1-65535 by default.
+gqrnet is a Go CLI for inspecting DNS and mail records, HTTP response metadata,
+TLS certificates, redirect chains, IP addresses, and TCP connectivity.
 
-## Repository guidance
+## Project structure
 
-- Follow the architecture and directory conventions in [.github/copilot-instructions.md](.github/copilot-instructions.md).
-- Keep HTTP checks passive; `redirects` follows only the requested URL's redirect chain. Port checks test TCP connectivity and do not identify services or test for vulnerabilities.
+- Cobra commands and CLI orchestration live in `cmd/`.
+- Reusable inspection logic lives in `internal/`.
+- Follow the established architecture and directory conventions in those packages.
+- Keep tests alongside the code they cover.
+- Update `README.md` and `docs/commands.md` when command behavior, flags, or defaults change.
+
+## Behavior and safety
+
 - Run network checks only against systems you are authorized to inspect.
-- Preserve existing CLI behavior and output formats; follow established code and test patterns, and update related documentation when behavior changes.
-- For Go code changes, run `./test.sh`; use focused package tests when appropriate.
+- Keep HTTP checks passive: `http` makes one request and does not follow redirects
+  or inspect the response body. `redirects` follows only the requested URL's chain;
+  it does not crawl a site.
+- Port checks test TCP connectivity only. Do not add service detection or
+  vulnerability testing.
+- Preserve existing redaction of URL query values and cookie values in HTTP output.
 
+## Compatibility
 
+- Preserve existing command arguments, flags, defaults, validation, and text/JSON output
+  unless a behavior change is explicitly requested.
+- Add or update focused tests for behavior changes, including output where applicable.
+
+## Verification
+
+- For Go changes, run `./test.sh`. It runs tests, the race detector, and `go vet`.
+- Use focused `go test` package tests when appropriate.
