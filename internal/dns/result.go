@@ -13,10 +13,15 @@ import (
 type Result struct {
 	A     []string `json:"a,omitempty"`
 	AAAA  []string `json:"aaaa,omitempty"`
+	CAA   []string `json:"caa,omitempty"`
 	CNAME []string `json:"cname,omitempty"`
+	HTTPS []string `json:"https,omitempty"`
 	MX    []string `json:"mx,omitempty"`
 	NS    []string `json:"ns,omitempty"`
+	PTR   []string `json:"ptr,omitempty"`
 	SOA   []string `json:"soa,omitempty"`
+	SRV   []string `json:"srv,omitempty"`
+	SVCB  []string `json:"svcb,omitempty"`
 	TXT   []string `json:"txt,omitempty"`
 	Error string   `json:"error,omitempty"`
 }
@@ -86,10 +91,14 @@ func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Re
 				records = append(records, r.A.String())
 			case *dns.AAAA:
 				records = append(records, r.AAAA.String())
+			case *dns.CAA, *dns.SRV, *dns.SVCB, *dns.HTTPS:
+				records = append(records, ans.String())
 			case *dns.MX:
 				records = append(records, fmt.Sprintf("%s (%d)", r.Mx, r.Preference))
 			case *dns.NS:
 				records = append(records, r.Ns)
+			case *dns.PTR:
+				records = append(records, r.Ptr)
 			case *dns.SOA:
 				records = append(records, fmt.Sprintf("%s %s %d %d %d %d %d", r.Ns, r.Mbox, r.Serial, r.Refresh, r.Retry, r.Expire, r.Minttl))
 			case *dns.CNAME:
@@ -119,12 +128,22 @@ func QueryDNSWithOptions(ctx context.Context, domain string, options Options) Re
 			res.A = records
 		case dns.TypeAAAA:
 			res.AAAA = records
+		case dns.TypeCAA:
+			res.CAA = records
 		case dns.TypeMX:
 			res.MX = records
 		case dns.TypeNS:
 			res.NS = records
+		case dns.TypePTR:
+			res.PTR = records
 		case dns.TypeSOA:
 			res.SOA = records
+		case dns.TypeSRV:
+			res.SRV = records
+		case dns.TypeSVCB:
+			res.SVCB = records
+		case dns.TypeHTTPS:
+			res.HTTPS = records
 		case dns.TypeTXT:
 			res.TXT = records
 		case dns.TypeCNAME:

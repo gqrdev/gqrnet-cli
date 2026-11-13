@@ -38,3 +38,18 @@ func TestPrintDNSTextWritesDNSSectionAndError(t *testing.T) {
 		}
 	}
 }
+
+func TestPrintDNSReverseTextWritesIPAndPTR(t *testing.T) {
+	var output bytes.Buffer
+	PrintDNSReverseText(&output, "192.0.2.1", dnsquery.Result{
+		PTR: []string{"host.example.com."},
+	})
+	for _, expected := range []string{
+		"=== Reverse DNS: 192.0.2.1 ===",
+		"PTR:   host.example.com.",
+	} {
+		if !strings.Contains(output.String(), expected) {
+			t.Errorf("output does not contain %q: %s", expected, output.String())
+		}
+	}
+}

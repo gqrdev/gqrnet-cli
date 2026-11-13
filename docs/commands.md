@@ -2,7 +2,7 @@
 
 Use `gqrnet --help` to list commands and `gqrnet <command> --help` to see a command's flags.
 
-All commands accept exactly one target. `domain`, `dns`, and `port` expect a hostname, not a URL, IP address, path, or port. They remove one trailing dot from a hostname. All commands accept `--json` for JSON output and `--timeout` for a positive timeout in seconds (default: 10, except `port`, which defaults to 120).
+All commands accept exactly one target. `domain`, `port`, and `dns <target-domain>` expect a hostname, not a URL, IP address, path, or port. The `dns reverse` subcommand instead expects an IP address. Hostname commands remove one trailing dot. All commands accept `--json` for JSON output and `--timeout` for a positive timeout in seconds (default: 10, except `port`, which defaults to 120).
 
 ## `domain`
 
@@ -36,18 +36,32 @@ gqrnet dns <target-domain> [flags]
 | --- | --- | --- |
 | `--json` | `false` | Print the result as JSON instead of text. |
 | `--timeout` | `10` | Set the query timeout in seconds; must be greater than zero. |
-| `--type` | All supported types | Select a record type. Repeat the flag to query multiple types. Values are case-insensitive. |
+| `--type` | `A`, `AAAA`, `CNAME`, `MX`, `NS`, `SOA`, `TXT` | Select a record type. Repeat the flag to query multiple types. Values are case-insensitive. |
 | `--server` | System DNS configuration | Select a DNS server. A port defaults to `53` when omitted. |
 
-Supported record types are `A`, `AAAA`, `CNAME`, `MX`, `NS`, `SOA`, and `TXT`. When `--type` is omitted, all are queried. Without `--server`, gqrnet reads the system DNS configuration from `/etc/resolv.conf`.
+Supported record types are `A`, `AAAA`, `CAA`, `CNAME`, `HTTPS`, `MX`, `NS`, `SOA`, `SRV`, `SVCB`, and `TXT`. When `--type` is omitted, only `A`, `AAAA`, `CNAME`, `MX`, `NS`, `SOA`, and `TXT` are queried; request advanced types explicitly because DNS servers may not support every type. Without `--server`, gqrnet reads the system DNS configuration from `/etc/resolv.conf`.
 
 ```bash
 gqrnet dns example.com
 gqrnet dns example.com --type A --type MX
+gqrnet dns example.com --type CAA --type SRV --type SVCB --type HTTPS
 gqrnet dns example.com --server 1.1.1.1 --json
 ```
 
-The target must be a hostname without a scheme, path, or port; IP addresses are not accepted. DNS query failures are included in the result and do not by themselves make the command fail.
+The target must be a hostname without a scheme, path, or port; IP addresses are not accepted by this command. DNS query failures are included per record type in the result and do not stop other selected types from being queried.
+
+Use the explicit reverse subcommand for PTR lookups:
+
+```text
+gqrnet dns reverse <ip> [flags]
+```
+
+It accepts IPv4 or IPv6 addresses and supports the same `--json`, `--timeout`, and `--server` flags. A hostname is not accepted. DNS query failures are included in the result and do not by themselves make the command fail.
+
+```bash
+gqrnet dns reverse 192.0.2.1
+gqrnet dns reverse 2001:db8::1 --json
+```
 
 ## `mail`
 

@@ -25,10 +25,14 @@ var (
 var dnsTypeCodes = map[string]uint16{
 	"A":     dns.TypeA,
 	"AAAA":  dns.TypeAAAA,
+	"CAA":   dns.TypeCAA,
 	"CNAME": dns.TypeCNAME,
+	"HTTPS": dns.TypeHTTPS,
 	"MX":    dns.TypeMX,
 	"NS":    dns.TypeNS,
 	"SOA":   dns.TypeSOA,
+	"SRV":   dns.TypeSRV,
+	"SVCB":  dns.TypeSVCB,
 	"TXT":   dns.TypeTXT,
 }
 
@@ -70,12 +74,57 @@ var dnsCmd = &cobra.Command{
 	},
 }
 
+var dnsReverseCmd = &cobra.Command{
+	Use:   "reverse <ip>",
+	Short: "Query PTR records for an IP address.",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ip := net.ParseIP(args[0])
+		if ip == nil {
+			return errors.New("target must be a valid IP address")
+		}
+		target := ip.String()
+		reverseName, err := dns.ReverseAddr(target)
+		if err != nil {
+			return err
+		}
+		if dnsTimeoutSec <= 0 {
+			return errors.New("timeout must be greater than zero seconds")
+		}
+		server, err := normalizeDNSServer(dnsServer)
+		if err != nil {
+			return err
+		}
+
+		parent := cmd.Context()
+		if parent == nil {
+			parent = context.Background()
+		}
+		ctx, cancel := context.WithTimeout(parent, time.Duration(dnsTimeoutSec)*time.Second)
+		defer cancel()
+		result := dnsQuery(ctx, reverseName, dnsquery.Options{
+			Server: server,
+			Types:  []uint16{dns.TypePTR},
+		})
+
+		if dnsJSONOutput {
+			return output.PrintDNSJSON(cmd.OutOrStdout(), result)
+		}
+		output.PrintDNSReverseText(cmd.OutOrStdout(), target, result)
+		return nil
+	},
+}
+
 func init() {
 	dnsCmd.Flags().BoolVar(&dnsJSONOutput, "json", false, "Output results in JSON format")
 	dnsCmd.Flags().IntVar(&dnsTimeoutSec, "timeout", 10, "Execution timeout in seconds")
 	dnsCmd.Flags().StringVar(&dnsServer, "server", "", "DNS server to query (port 53 is used by default)")
 	dnsCmd.Flags().StringArrayVar(&dnsTypes, "type", nil, "DNS record type to query (repeatable)")
 
+	dnsReverseCmd.Flags().BoolVar(&dnsJSONOutput, "json", false, "Output results in JSON format")
+	dnsReverseCmd.Flags().IntVar(&dnsTimeoutSec, "timeout", 10, "Execution timeout in seconds")
+	dnsReverseCmd.Flags().StringVar(&dnsServer, "server", "", "DNS server to query (port 53 is used by default)")
+	dnsCmd.AddCommand(dnsReverseCmd)
 	RootCmd.AddCommand(dnsCmd)
 }
 
