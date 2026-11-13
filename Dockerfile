@@ -1,4 +1,4 @@
-FROM golang:1.27.1-trixie
+FROM golang:1.27.4-trixie
 
 RUN groupadd -g 1000 devuser \
     && useradd -m -u 1000 -g devuser devuser
